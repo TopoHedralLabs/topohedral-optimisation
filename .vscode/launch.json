@@ -1,0 +1,53 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb", 
+            "request": "launch",
+            "name": "topohedral-optimisation Unit Tests",
+            "cargo": {
+                "args": [
+                    "test", 
+                    "--lib",
+                    "--no-run",
+                    "--package=topohedral-optimisation", 
+                    "--", 
+                    "--test-threads", 
+                    "1", 
+                    "--nocapture",
+                ], 
+                "filter": {
+                    "name": "topohedral_optimisation",
+                    "kind": "lib",
+                }
+            },
+            "args": [], 
+            "cwd": "${workspaceFolder}", 
+            "sourceLanguages": ["rust"]
+        }, 
+        {
+            "type": "lldb", 
+            "request": "launch",
+            "name": "conjugate-gradient",
+            "cargo": {
+                "args": [
+                    "test", 
+                    "--lib",
+                    "--no-run",
+                    "--package=topohedral-optimisation", 
+                    "--", 
+                    "--test-threads", 
+                    "1", 
+                    "--nocapture",
+                ], 
+                "filter": {
+                    "name": "conjugate_gradient",
+                    "kind": "bin",
+                }
+            },
+            "args": [], 
+            "cwd": "${workspaceFolder}", 
+            "sourceLanguages": ["rust"]
+        }
+    ]
+}
