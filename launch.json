@@ -1,0 +1,104 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb", 
+            "request": "launch",
+            "name": "topohedral-viewer Unit Tests",
+            "cargo": {
+                "args": [
+                    "test", 
+                    "--lib",
+                    "--no-run",
+                    "--package=topohedral-viewer"
+                ], 
+                "filter": {
+                    "name": "topohedral_viewer",
+                    "kind": "lib",
+                }
+            },
+            "args": [], 
+            "cwd": "${workspaceFolder}", 
+            "sourceLanguages": ["rust"]
+        },
+        {
+            "type": "lldb", 
+            "request": "launch",
+            "name": "topohedral-viewer Main",
+            "cargo": {
+                "args": [
+                    "build", 
+                    "--bin=topohedral-viewer",
+                    "--package=topohedral-viewer"
+                ], 
+                "filter": {
+                    "name": "topohedral-viewer",
+                    "kind": "bin",
+                }
+            },
+            "args": [], 
+            "cwd": "${workspaceFolder}", 
+            "sourceLanguages": ["rust"]
+        }, 
+        {
+            "type": "lldb", 
+            "request": "launch",
+            "name": "topohedral-modeller All Unit Tests",
+            "cargo": {
+                "args": [
+                    "test", 
+                    "--lib",
+                    "--no-run",
+                    "--package=topohedral-modeller"
+                ], 
+                "filter": {
+                    "name": "topohedral-modeller",
+                    "kind": "lib",
+                }
+            },
+            "args": [], 
+            "cwd": "${workspaceFolder}", 
+            "sourceLanguages": ["rust"]
+        }, 
+        {
+            "type": "lldb", 
+            "request": "launch",
+            "name": "topohedral-optimisation Unit Tests",
+            "cargo": {
+                "args": [
+                    "test", 
+                    "--lib",
+                    "--no-run",
+                    "--package=topohedral-optimisation"
+                ], 
+                "filter": {
+                    "name": "topohedral-optimisation",
+                    "kind": "lib",
+                }
+            },
+            "args": [], 
+            "cwd": "${workspaceFolder}/topohedral-optimisation", 
+            "sourceLanguages": ["rust"]
+        },
+        {
+            "type": "lldb", 
+            "request": "launch",
+            "name": "topohedral-integrate Unit Tests",
+            "cargo": {
+                "args": [
+                    "test", 
+                    "--lib",
+                    "--no-run",
+                    "--package=topohedral-integrate"
+                ], 
+                "filter": {
+                    "name": "topohedral-integrate",
+                    "kind": "lib",
+                }
+            },
+            "args": [], 
+            "cwd": "${workspaceFolder}/topohedral-integrate", 
+            "sourceLanguages": ["rust"]
+        }
+    ]
+}

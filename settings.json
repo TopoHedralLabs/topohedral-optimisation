@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.showUnlinkedFileNotification": false,
+    "rust-analyzer.debug.engine": "vadimcn.vscode-lldb", 
+    "rust-analyzer.cargo.features": ["viewer", "python-bindings"]
+}
