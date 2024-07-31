@@ -1,9 +1,26 @@
+//! This module contains the implementation of the scalar optimisation algorithms.  
+//!
+//!  Scalar optimisation algorithms included are:
+//! - Brent's method
+//! - Bounded method
+//--------------------------------------------------------------------------------------------------
+
+//{{{ crate imports 
+//}}}
+//{{{ std imports 
 use core::fmt;
 use std::fmt::format;
+//}}}
+//{{{ dep imports 
+//}}}
+//--------------------------------------------------------------------------------------------------
 
+
+//{{{ const:  GOLDERN_RATIO
 const GOLDERN_RATIO: f64 = 1.6180339887498948482;
 //..................................................................................................
-
+//}}}
+//{{{ enum:   Method
 /// Enum representing the set of supported minimization methods.
 pub enum Method
 {
@@ -19,7 +36,8 @@ impl Default for Method
     }
 }
 //..................................................................................................
-
+//}}}
+//{{{ enum:   Bounds
 /// Enum representing the set of supported bounds.
 ///
 /// - ``None``: Means that the user wishes for the bracket to be computed completely from scratch.
@@ -57,7 +75,8 @@ impl fmt::Display for Bounds
     }
 }
 //..................................................................................................
-
+//}}}
+//{{{ enum:   ScalarError
 /// Enum representing the set of possible scalar minimization errors.
 /// - ``MaxIterReached``: Means that the maximum number of iterations has been reached.
 /// - ``UnknownError``: Means that the minimization algorithm encountered an unknown error.
@@ -94,7 +113,8 @@ impl fmt::Display for ScalarError
     }
 }
 //..................................................................................................
-
+//}}}
+//{{{ struct: BracketOptions 
 pub struct BracketOptions
 {
     a: f64,
@@ -116,7 +136,8 @@ impl Default for BracketOptions
     }
 }
 //..................................................................................................
-
+//}}}
+//{{{ fun:    brack_conds
 fn brack_conds<F: Fn(f64) -> f64>(
     a: f64,
     b: f64,
@@ -138,7 +159,8 @@ fn brack_conds<F: Fn(f64) -> f64>(
     (cond1, cond2, cond3)
 }
 //..................................................................................................
-
+//}}}
+//{{{ fun:    bracket
 /// Bracketing algorithm for scalar function
 ///
 /// Given a function with a local minumum, this algorithm finds a bracketing interval
@@ -273,7 +295,8 @@ pub fn bracket<F: Fn(f64) -> f64>(
     out
 }
 //..................................................................................................
-
+//}}}
+//{{{ struct: MinimizeScalarOptions
 pub struct MinimizeScalarOptions
 {
     pub method: Method,
@@ -296,7 +319,8 @@ impl Default for MinimizeScalarOptions
 }
 
 //..................................................................................................
-
+//}}}
+//{{{ struct: MinimizeScalarReturns
 #[derive(Default, Debug)]
 pub struct MinimizeScalarReturns
 {
@@ -305,7 +329,8 @@ pub struct MinimizeScalarReturns
     pub iter: usize,
     pub funcalls: usize,
 }
-
+//}}}
+//{{{ fun:    minimize_scalar
 pub fn minimize_scalar<F: Fn(f64) -> f64>(
     f: F,
     opts: &MinimizeScalarOptions,
@@ -337,7 +362,8 @@ pub fn minimize_scalar<F: Fn(f64) -> f64>(
     };
     Ok(out)
 }
-
+//}}}
+//{{{ struct: Brent
 struct Brent<F: Fn(f64) -> f64>
 {
     // input members
@@ -588,7 +614,8 @@ impl<F: Fn(f64) -> f64> Brent<F>
     }
 }
 //..................................................................................................
-
+//}}}
+//{{{ struct: Bounded
 struct Bounded<F: Fn(f64) -> f64>
 {
     // input members
@@ -798,7 +825,8 @@ impl<F: Fn(f64) -> f64> Bounded<F>
         out
     }
 }
-
+//}}}
+//{{{ fun:    sign
 fn sign(x: f64) -> f64
 {
     if x > 0.0
@@ -815,10 +843,15 @@ fn sign(x: f64) -> f64
     }
 }
 //..................................................................................................
+//}}}
 
+
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
 #[cfg(test)]
-mod test
+mod tests
 {
+  
     use super::*;
     use approx::assert_relative_eq;
     use serde::Deserialize;
@@ -1068,3 +1101,4 @@ mod test
     minimise_scalar_bounded_test!(minimise_scalar_bounded_test9, |x: f64| (x - 2.0).abs() + 1.0);
     minimise_scalar_bounded_test!(minimise_scalar_bounded_test10, |x: f64| (x.powi(2) - 4.0).powi(2));
 }
+//}}}
