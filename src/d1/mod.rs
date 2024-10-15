@@ -330,39 +330,6 @@ pub struct MinimizeScalarReturns
     pub funcalls: usize,
 }
 //}}}
-//{{{ fun:    minimize_scalar
-pub fn minimize_scalar<F: Fn(f64) -> f64>(
-    f: F,
-    opts: &MinimizeScalarOptions,
-) -> Result<MinimizeScalarReturns, ScalarError>
-{
-    let mut out = MinimizeScalarReturns::default();
-
-    match opts.method
-    {
-        Method::Brent =>
-        {
-            let mut brent = Brent::new(f, opts);
-            brent.optimize()?;
-            out.xmin = brent.xmin;
-            out.fmin = brent.fmin;
-            out.iter = brent.iter;
-            out.funcalls = brent.funcalls;
-        }
-        Method::Bounded =>
-        {
-            let mut bounded = Bounded::new(f, opts)?;
-            bounded.optimize()?;
-            out.xmin = bounded.xmin;
-            out.fmin = bounded.fmin;
-            out.iter = bounded.iter;
-            out.funcalls = bounded.funcalls;
-
-        }
-    };
-    Ok(out)
-}
-//}}}
 //{{{ struct: Brent
 struct Brent<F: Fn(f64) -> f64>
 {
@@ -844,7 +811,39 @@ fn sign(x: f64) -> f64
 }
 //..................................................................................................
 //}}}
+//{{{ fun:    minimize_scalar
+pub fn minimize_scalar<F: Fn(f64) -> f64>(
+    f: F,
+    opts: &MinimizeScalarOptions,
+) -> Result<MinimizeScalarReturns, ScalarError>
+{
+    let mut out = MinimizeScalarReturns::default();
 
+    match opts.method
+    {
+        Method::Brent =>
+        {
+            let mut brent = Brent::new(f, opts);
+            brent.optimize()?;
+            out.xmin = brent.xmin;
+            out.fmin = brent.fmin;
+            out.iter = brent.iter;
+            out.funcalls = brent.funcalls;
+        }
+        Method::Bounded =>
+        {
+            let mut bounded = Bounded::new(f, opts)?;
+            bounded.optimize()?;
+            out.xmin = bounded.xmin;
+            out.fmin = bounded.fmin;
+            out.iter = bounded.iter;
+            out.funcalls = bounded.funcalls;
+
+        }
+    };
+    Ok(out)
+}
+//}}}
 
 //-------------------------------------------------------------------------------------------------
 //{{{ mod: tests
