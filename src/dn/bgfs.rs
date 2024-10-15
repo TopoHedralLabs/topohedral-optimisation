@@ -15,7 +15,7 @@ use super::common::*;
 
 
 //{{{ fun: min_uncon_bfgs
-pub fn minimize<F: Fn(&[f64]) -> f64>(f: F, opts: &UnConstrainedOptions) -> MinUnconReturns 
+pub fn minimize<F: Fn(&[f64]) -> f64>(f: F, opts: &MinUnconOptions) -> MinUnconReturns 
 {
     panic!()
 }

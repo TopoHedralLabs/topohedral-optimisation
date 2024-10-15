@@ -812,7 +812,7 @@ fn sign(x: f64) -> f64
 //..................................................................................................
 //}}}
 //{{{ fun:    minimize_scalar
-pub fn minimize_scalar<F: Fn(f64) -> f64>(
+pub fn minimize<F: Fn(f64) -> f64>(
     f: F,
     opts: &MinimizeScalarOptions,
 ) -> Result<MinimizeScalarReturns, ScalarError>
@@ -995,7 +995,7 @@ mod tests
                 opts.tol = 1e-8;
                 opts.max_iter = 1000;
 
-                let res = minimize_scalar(&f, &opts);
+                let res = minimize(&f, &opts);
                 assert_eq!(res.is_ok(), true);
 
                 let res_ok = res.unwrap();
@@ -1071,7 +1071,7 @@ mod tests
                 opts.tol = 1e-8;
                 opts.max_iter = 1000;
 
-                let res = minimize_scalar(&f, &opts);
+                let res = minimize(&f, &opts);
                 assert_eq!(res.is_ok(), true);
 
                 let res_ok = res.unwrap();                
