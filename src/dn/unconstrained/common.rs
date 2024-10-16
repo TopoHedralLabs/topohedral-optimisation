@@ -4,7 +4,7 @@
 //--------------------------------------------------------------------------------------------------
 
 //{{{ crate imports 
-use crate::common::Vector;
+use crate::common::{Vector, Matrix};
 //}}}
 //{{{ std imports 
 //}}}
@@ -33,7 +33,8 @@ pub struct MinimizeOptions {
     pub method: Method,
     pub tol: f64,
     pub max_iter: usize,
-    pub grad_f: Option<dyn Fn(&Vector) -> Vector>,
+    pub grad_f: Option<Box<dyn Fn(&Vector) -> Vector>>,
+    pub hess_f: Option<Box<dyn Fn(&Vector) -> Matrix>>
 }
 //}}}
 //{{{ struct: MinimizeReturns 
