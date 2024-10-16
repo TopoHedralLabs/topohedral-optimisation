@@ -5,6 +5,7 @@
 
 //{{{ crate imports 
 use super::common::*;
+use crate::common::Vector;
 //}}}
 //{{{ std imports 
 //}}}
@@ -13,13 +14,13 @@ use super::common::*;
 //--------------------------------------------------------------------------------------------------
 
 
-
-//{{{ fun: min_uncon_bfgs
-pub fn minimize<F: Fn(&[f64]) -> f64>(f: F, opts: &MinUnconOptions) -> MinUnconReturns 
+//{{{ fun: min_uncon_newton
+pub fn minimize<F: Fn(&Vector) -> f64>(f: F, x0: &Vector, opts: &MinimizeOptions) -> MinimizeReturns 
 {
     panic!()
 }
 //}}}
+
 
 
 

@@ -296,8 +296,8 @@ pub fn bracket<F: Fn(f64) -> f64>(
 }
 //..................................................................................................
 //}}}
-//{{{ struct: MinimizeScalarOptions
-pub struct MinimizeScalarOptions
+//{{{ struct: MinimizeOptions
+pub struct MinimizeOptions
 {
     pub method: Method,
     pub bounds: Bounds,
@@ -305,7 +305,7 @@ pub struct MinimizeScalarOptions
     pub max_iter: usize,
 }
 
-impl Default for MinimizeScalarOptions
+impl Default for MinimizeOptions
 {
     fn default() -> Self
     {
@@ -320,9 +320,9 @@ impl Default for MinimizeScalarOptions
 
 //..................................................................................................
 //}}}
-//{{{ struct: MinimizeScalarReturns
+//{{{ struct: MinimizeReturns
 #[derive(Default, Debug)]
-pub struct MinimizeScalarReturns
+pub struct MinimizeReturns
 {
     pub xmin: f64,
     pub fmin: f64,
@@ -351,7 +351,7 @@ impl<F: Fn(f64) -> f64> Brent<F>
 {
     fn new(
         f: F,
-        opts: &MinimizeScalarOptions,
+        opts: &MinimizeOptions,
     ) -> Self
     {
         Self {
@@ -601,7 +601,7 @@ impl<F: Fn(f64) -> f64> Bounded<F>
 {
     fn new(
         f: F,
-        opts: &MinimizeScalarOptions,
+        opts: &MinimizeOptions,
     ) -> Result<Self, ScalarError>
     {
         let out = if let Bounds::Pair(bounds) = opts.bounds
@@ -811,13 +811,13 @@ fn sign(x: f64) -> f64
 }
 //..................................................................................................
 //}}}
-//{{{ fun:    minimize_scalar
+//{{{ fun:    minimize
 pub fn minimize<F: Fn(f64) -> f64>(
     f: F,
-    opts: &MinimizeScalarOptions,
-) -> Result<MinimizeScalarReturns, ScalarError>
+    opts: &MinimizeOptions,
+) -> Result<MinimizeReturns, ScalarError>
 {
-    let mut out = MinimizeScalarReturns::default();
+    let mut out = MinimizeReturns::default();
 
     match opts.method
     {
@@ -989,7 +989,7 @@ mod tests
                 let test_data = MinimiseScalarBrentTest1::new();
                 let f = $fcn;
 
-                let mut opts = MinimizeScalarOptions::default();
+                let mut opts = MinimizeOptions::default();
                 opts.method = Method::Brent;
                 opts.bounds = Bounds::Triple(test_data.$test_name.values.bracket);
                 opts.tol = 1e-8;
@@ -1065,7 +1065,7 @@ mod tests
                 let test_data = MinimiseScalarBoundedTest1::new();
                 let f = $fcn;
 
-                let mut opts = MinimizeScalarOptions::default();
+                let mut opts = MinimizeOptions::default();
                 opts.method = Method::Bounded;
                 opts.bounds = Bounds::Pair(test_data.$test_name.values.bounds);
                 opts.tol = 1e-8;

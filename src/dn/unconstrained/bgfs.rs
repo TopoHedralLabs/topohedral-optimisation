@@ -4,6 +4,8 @@
 //--------------------------------------------------------------------------------------------------
 
 //{{{ crate imports 
+use super::common::*;
+use crate::common::Vector;
 //}}}
 //{{{ std imports 
 //}}}
@@ -12,27 +14,13 @@
 //--------------------------------------------------------------------------------------------------
 
 
-//{{{ enum:   UnconMethod
-pub enum UnconMethod
+
+//{{{ fun: min_uncon_bfgs
+pub fn minimize<F: Fn(&Vector) -> f64>(f: F, x0: &Vector, opts: &MinimizeOptions) -> MinimizeReturns 
 {
-   CG, 
-   BFGS, 
-   NEWTON
+    panic!()
 }
 //}}}
-//{{{ struct: MinUnconOptions
-pub struct MinUnconOptions {
-    pub method: UnconMethod,
-    pub tol: f64,
-    pub max_iter: usize,
-}
-//}}}
-//{{{ struct: MinUnconReturns
-pub struct MinUnconReturns {}
-//}}}
-
-
-
 
 
 
