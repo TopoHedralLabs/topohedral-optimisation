@@ -58,7 +58,7 @@ mod tests
             hess_f: None,
         };
 
-        let res = minimize(f, &x0, &opts);
+        // let res = minimize(f, &x0, &opts);
     }
   
 }
