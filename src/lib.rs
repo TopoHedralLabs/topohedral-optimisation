@@ -14,6 +14,7 @@
 
 
 mod common;
+mod diff;
 pub mod d1;
 pub mod dn;
 
