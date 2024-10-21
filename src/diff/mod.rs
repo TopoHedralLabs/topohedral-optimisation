@@ -20,26 +20,10 @@ const REL_EPS_SMALL: f64 = 1e-6;
 const REL_EPS_LARGE: f64 = 1e-3;
 
 
-#[derive(Debug, Default)]
-pub struct FunctionAttributes {
-    /// Whether the function is periodic in each dimension. A period of 0 means that the function 
-    /// is not periodic in that dimension.
-    pub period: Option<Vec<f64>>,
-    /// Limits of the function's domain. A pair of Nans means that the function is not bounded
-    /// in that dimension.
-    pub domain: Option<Vec<(f64, f64)>>,
-    /// Set of discontinuities or singularities of the function in each dimension. An empty 
-    /// Vec means that the function is not discontinuous or singular in that dimension.
-    pub discon_or_singular:  Option<Vec<Vec<f64>>>,
-}
-
-// p
-
-
 pub struct GradOptions {
-    fun_attribs: FunctionAttributes,    
+    pub periods: Option<Vec<f64>>,
+    pub bounds: Option<Vec<(f64, f64)>>,
 }
-
 
 pub fn grad<F: Fn(&Vector) -> f64>(f: F, x_in: &Vector) -> Vector {
     //{{{ trace
@@ -111,6 +95,9 @@ pub fn grad<F: Fn(&Vector) -> f64>(f: F, x_in: &Vector) -> Vector {
         trace!("grad[i] = {}", grad[i]);
         //}}}
     }
+    //{{{ trace
+    info!("grad = {}", grad);
+    //}}}
     grad
 }
 
@@ -119,92 +106,131 @@ pub fn grad<F: Fn(&Vector) -> f64>(f: F, x_in: &Vector) -> Vector {
 #[cfg(test)]
 mod tests {
 
+    use core::f64;
+
     use approx::assert_relative_eq;
     use super::*;
 
     const MAX_REL: f64 = 1e-4;
 
-    #[test]
-    fn test1() {
-        let f = |x_vec: &Vector| {
-            let x = x_vec[0];
-            let y = x_vec[1]; 
-            let out = (x - 1.0).powi(2) * (y - 2.0).powi(2);    
-            out
-        };
 
-        let grad_f_true = |x_vec: &Vector| {
-            let x = x_vec[0];
-            let y = x_vec[1];
-            let out = Vector::from_column_slice(&[
-                ((x - 1.0) * 2.0)*(y - 2.0).powi(2),
-                (x - 1.0).powi(2) * ((y - 2.0) * 2.0),
-            ]);
-            out
-        };
+    //{{{ macro: quadratic_test
+    macro_rules! quadratic_test {
+        ($test_name: ident, $point: expr) => {
+            #[test]
+            fn $test_name() {
 
-        let x = Vector::from_column_slice(&[1.0f64,1.0f64]);
+                let f = |x_vec: &Vector| {
+                    let x = x_vec[0];
+                    let y = x_vec[1]; 
+                    let out = (x - 1.0).powi(2) * (y - 2.0).powi(2);    
+                    out
+                };
 
+                let grad_f_true = |x_vec: &Vector| {
+                    let x = x_vec[0];
+                    let y = x_vec[1];
+                    let out = Vector::from_column_slice(&[
+                        ((x - 1.0) * 2.0)*(y - 2.0).powi(2),
+                        (x - 1.0).powi(2) * ((y - 2.0) * 2.0),
+                    ]);
+                    out
+                };
 
-        let test_points: Vec<[f64; 2]> = vec![
-            [0.0, 0.0], 
-            [1.0e5, 0.0],
-            [-1.0e5, 0.0],
-            [0.0, 1.0e5],
-            [0.0, -1.0e5]   
-        ];
-
-        for point in test_points
-        {
-            let x = Vector::from_column_slice(&point);
-            let grad_fx1 = grad(f, &x);
-            let grad_fx2 = grad_f_true(&x);
-            for i in 0..grad_fx1.len() {
-                assert_relative_eq!(grad_fx1[i], grad_fx2[i], epsilon = MAX_REL);
+                let x = Vector::from_column_slice(&$point);
+                let grad_fx1 = grad(f, &x);
+                let grad_fx2 = grad_f_true(&x);
+                for i in 0..grad_fx1.len() {
+                    assert_relative_eq!(grad_fx1[i], grad_fx2[i], max_relative = MAX_REL);
+                }
             }
-        }
+        };
     }
+    //}}}
+    //{{{ collection: quadratic_tests
+    quadratic_test!(test_quadratic_1, [0.0,0.0]);
+    quadratic_test!(test_quadratic_2, [1.0e5,1.0e5]);
+    quadratic_test!(test_quadratic_3, [-1.0e5,-1.0e5]);
+    quadratic_test!(test_quadratic_4, [1.0, 2.0]);
+    quadratic_test!(test_quadratic_5, [1.0e10, 1.0e10]);
+    quadratic_test!(test_quadratic_7, [-1.0e10, -1.0e10]);
+    //}}}
+    //{{{ macro: sin_test 
+    macro_rules! sin_test {
+        ($test_name: ident, $point: expr) => {
+            #[test]
+            fn $test_name() {
 
+                let f = |x_vec: &Vector| {
+                    let x = x_vec[0];
+                    let y = x_vec[1]; 
+                    let out = x.sin() * y.sin();
+                    out
+                };
 
-    #[test]
-    fn test2() {
-        let f = |x_vec: &Vector| {
-            let x = x_vec[0];
-            let y = x_vec[1]; 
-            let out = x.sin() * y.sin();
-            out
-        };
+                let grad_f_true = |x_vec: &Vector| {
+                    let x = x_vec[0];
+                    let y = x_vec[1];
+                    let out = Vector::from_column_slice(&[
+                        x.cos() * y.sin(),
+                        x.sin() * y.cos()
+                    ]);
+                    out
+                };
 
-        let grad_f_true = |x_vec: &Vector| {
-            let x = x_vec[0];
-            let y = x_vec[1];
-            let out = Vector::from_column_slice(&[
-                x.cos() * y.sin(), 
-                x.sin() * y.cos()
-            ]);
-            out
-        };
-
-        let x = Vector::from_column_slice(&[1.0f64,1.0f64]);
-
-
-        let test_points: Vec<[f64; 2]> = vec![
-            [0.0, 0.0], 
-            [1.0e5, 0.0],
-            [-1.0e5, 0.0],
-            [0.0, 1.0e5],
-            [0.0, -1.0e5]   
-        ];
-
-        for point in test_points
-        {
-            let x = Vector::from_column_slice(&point);
-            let grad_fx1 = grad(f, &x);
-            let grad_fx2 = grad_f_true(&x);
-            for i in 0..grad_fx1.len() {
-                assert_relative_eq!(grad_fx1[i], grad_fx2[i], epsilon = MAX_REL);
+                let x = Vector::from_column_slice(&$point);
+                let grad_fx1 = grad(f, &x);
+                let grad_fx2 = grad_f_true(&x);
+                for i in 0..grad_fx1.len() {
+                    assert_relative_eq!(grad_fx1[i], grad_fx2[i], max_relative = MAX_REL, epsilon = 1e-10);
+                }
             }
-        }
+        };
     }
+    //}}}
+    //{{{ collection: sin_tests
+    sin_test!(test_sin_1, [1.0, 1.0]);
+    sin_test!(test_sin_2, [0.0, 0.0]);
+    sin_test!(test_sin_3, [10000.0 * f64::consts::PI, 10000.0 * f64::consts::PI]);
+    sin_test!(test_sin_4, [-10000.0 * f64::consts::PI, -10000.0 * f64::consts::PI]);
+    //}}}
+    //{{{ macro: log_test 
+    macro_rules! log_test {
+        ($test_name: ident, $point: expr) => {
+            #[test]
+            fn $test_name() {
+
+                let f = |x_vec: &Vector| {
+                    let x = x_vec[0];
+                    let y = x_vec[1]; 
+                    let out = x.ln() * y.ln();
+                    out
+                };
+
+                let grad_f_true = |x_vec: &Vector| {
+                    let x = x_vec[0];
+                    let y = x_vec[1];
+                    let out = Vector::from_column_slice(&[
+                        (1.0 / x) * y.ln(),
+                        x.ln() * (1.0 / y)
+                    ]);
+                    out
+                };
+
+                let x = Vector::from_column_slice(&$point);
+                let grad_fx1 = grad(f, &x);
+                let grad_fx2 = grad_f_true(&x);
+                for i in 0..grad_fx1.len() {
+                    assert_relative_eq!(grad_fx1[i], grad_fx2[i], max_relative = MAX_REL, epsilon = 1e-10);
+                }
+            }
+        };
+    }
+    //}}}
+    //{{{ collection: log_tests
+
+    log_test!(test_log_1, [1.0, 1.0]);
+    log_test!(test_log_2, [1.0e10, 1.0e10]);
+    //}}}
 }
 //}}}
