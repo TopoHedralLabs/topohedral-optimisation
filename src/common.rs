@@ -163,6 +163,10 @@ where
 }
 //}}}
 
+trait Checkable {
+    fn check(&self) -> bool;
+}
+
 //{{{ mod: tests
 #[cfg(test)]
 mod tests {
