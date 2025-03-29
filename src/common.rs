@@ -156,6 +156,10 @@ impl<const N: usize, F: FnMut(&SVector<N>) -> f64 + Clone> RealFn<N> for FnMutWr
 }
 //}}}
 
+trait Checkable {
+    fn check(&self) -> bool;
+}
+
 //{{{ mod: tests
 #[cfg(test)]
 mod tests {
