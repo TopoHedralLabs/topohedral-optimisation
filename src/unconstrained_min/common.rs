@@ -3,37 +3,38 @@
 //! Longer description of module
 //--------------------------------------------------------------------------------------------------
 
-//{{{ crate imports 
-use crate::common::{SVector, SMatrix, RealFn};
+//{{{ crate imports
+use crate::common::{RealFn, SVector};
 use crate::line_search as ls;
 use crate::unconstrained_min::conjugate_gradient as cg;
 //}}}
-//{{{ std imports 
+//{{{ std imports
 //}}}
-//{{{ dep imports 
+//{{{ dep imports
 use thiserror::Error;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
-#[derive(Error, Debug)] 
+#[derive(Error, Debug)]
 pub enum Error {
-
     #[error("Linear search failed with error {0}")]
     LineSearch(#[from] ls::Error),
     #[error("Maximum iterations of {0} reached")]
     MaxIterations(usize),
 }
 
-pub enum Method<const N: usize> 
-    where
+#[allow(clippy::identity_op)]
+pub enum Method<const N: usize>
+where
     [(); N * 1]:,
     [(); N * N]:,
 {
-    CG(cg::Opts<N>)
+    CG(cg::Opts<N>),
 }
 //{{{ struct: UnconstrainedOpts
+#[allow(clippy::identity_op)]
 #[derive(Debug, Clone)]
-pub struct Opts<const N: usize> 
+pub struct Opts<const N: usize>
 where
     [(); N * 1]:,
     [(); N * N]:,
@@ -43,10 +44,10 @@ where
     pub ls_method: ls::LineSearchMethod,
 }
 //}}}
-
+#[allow(clippy::identity_op)]
 #[derive(Debug, Clone)]
 pub struct Returns<const N: usize>
-    where
+where
     [(); N * 1]:,
     [(); N * N]:,
 {
@@ -58,8 +59,9 @@ pub struct Returns<const N: usize>
     pub num_restarts: usize,
 }
 
+#[allow(clippy::identity_op)]
 pub trait Minimizer<const N: usize, F: RealFn<N>>
-    where
+where
     [(); N * 1]:,
     [(); N * N]:,
 {

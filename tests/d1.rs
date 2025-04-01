@@ -1,6 +1,7 @@
 #![feature(generic_const_exprs)]
+#![allow(incomplete_features)]
 #![feature(impl_trait_in_assoc_type)]
-
+#![feature(type_alias_impl_trait)]
 
 use topohedral_optimisation::d1::*;
 
@@ -8,25 +9,20 @@ use approx::assert_relative_eq;
 use serde::Deserialize;
 use std::fs;
 
-
 #[derive(Deserialize, Debug)]
-struct BracketTest3
-{
+struct BracketTest3 {
     a: f64,
     b: f64,
     results: (f64, f64, f64, f64, f64, f64, usize),
 }
 
 #[derive(Deserialize, Debug)]
-struct BracketTest2
-{
-    description: String,
+struct BracketTest2 {
     values: BracketTest3,
 }
 
 #[derive(Deserialize, Debug)]
-struct BracketTest1
-{
+struct BracketTest1 {
     bracket_test1: BracketTest2,
     bracket_test2: BracketTest2,
     bracket_test3: BracketTest2,
@@ -34,10 +30,8 @@ struct BracketTest1
     bracket_test5: BracketTest2,
 }
 
-impl BracketTest1
-{
-    fn new() -> Self
-    {
+impl BracketTest1 {
+    fn new() -> Self {
         let json_file = fs::read_to_string("assets/bracket.json").expect("Unable to read file");
         serde_json::from_str(&json_file).expect("Could not deserialize")
     }
@@ -46,8 +40,7 @@ impl BracketTest1
 macro_rules! bracket_test {
     ($test_name: ident) => {
         #[test]
-        fn $test_name()
-        {
+        fn $test_name() {
             let tol = 5e-4;
             let test_data = BracketTest1::new();
             let a = test_data.$test_name.values.a;
@@ -78,26 +71,23 @@ bracket_test!(bracket_test3);
 bracket_test!(bracket_test4);
 bracket_test!(bracket_test5);
 #[test]
-fn bracket_test_err1()
-{
-    let f = |x: f64| 100.0;
+fn bracket_test_err1() {
+    let f = |_x: f64| 100.0;
     let opts = BracketOptions::default();
     let out = bracket(&f, &opts);
-    assert_eq!(out.is_err(), true);
+    assert!(out.is_err());
 }
 #[test]
-fn bracket_test_err2()
-{
+fn bracket_test_err2() {
     let f = |x: f64| x * x * x;
     let opts = BracketOptions::default();
     let out = bracket(&f, &opts);
-    assert_eq!(out.is_err(), true);
+    assert!(out.is_err());
 }
 //..............................................................................................
 
 #[derive(Deserialize, Debug)]
-struct MinimiseScalarBrentTest3
-{
+struct MinimiseScalarBrentTest3 {
     bracket: (f64, f64, f64),
     xmin: f64,
     fmin: f64,
@@ -106,15 +96,12 @@ struct MinimiseScalarBrentTest3
 }
 
 #[derive(Deserialize, Debug)]
-struct MinimiseScalarBrentTest2
-{
-    description: String,
+struct MinimiseScalarBrentTest2 {
     values: MinimiseScalarBrentTest3,
 }
 
 #[derive(Deserialize, Debug)]
-struct MinimiseScalarBrentTest1
-{
+struct MinimiseScalarBrentTest1 {
     minimise_scalar_brent_test1: MinimiseScalarBrentTest2,
     minimise_scalar_brent_test2: MinimiseScalarBrentTest2,
     minimise_scalar_brent_test3: MinimiseScalarBrentTest2,
@@ -122,10 +109,8 @@ struct MinimiseScalarBrentTest1
     minimise_scalar_brent_test5: MinimiseScalarBrentTest2,
 }
 
-impl MinimiseScalarBrentTest1
-{
-    fn new() -> Self
-    {
+impl MinimiseScalarBrentTest1 {
+    fn new() -> Self {
         let json_file =
             fs::read_to_string("assets/minimise-scalar-brent.json").expect("Unable to read file");
         serde_json::from_str(&json_file).expect("Could not deserialize")
@@ -135,8 +120,7 @@ impl MinimiseScalarBrentTest1
 macro_rules! minimise_scalar_brent_test {
     ($test_name: ident, $fcn: expr) => {
         #[test]
-        fn $test_name()
-        {
+        fn $test_name() {
             let tol = 1.0e-6;
             let test_data = MinimiseScalarBrentTest1::new();
             let f = $fcn;
@@ -161,31 +145,27 @@ macro_rules! minimise_scalar_brent_test {
 
 minimise_scalar_brent_test!(minimise_scalar_brent_test1, |x: f64| x.exp() - 4.0 * x);
 minimise_scalar_brent_test!(minimise_scalar_brent_test2, |x: f64| 1.0e-8 * x.powi(2));
-minimise_scalar_brent_test!(minimise_scalar_brent_test3, |x: f64| x.powi(2) + 0.1 * (50.0 * x).sin());
+minimise_scalar_brent_test!(minimise_scalar_brent_test3, |x: f64| x.powi(2)
+    + 0.1 * (50.0 * x).sin());
 minimise_scalar_brent_test!(minimise_scalar_brent_test4, |x: f64| (x - 2.0).abs() + 1.0);
-minimise_scalar_brent_test!(minimise_scalar_brent_test5, |x: f64| (x.powi(2) - 4.0).powi(2));
+minimise_scalar_brent_test!(minimise_scalar_brent_test5, |x: f64| (x.powi(2) - 4.0)
+    .powi(2));
 //..............................................................................................
 
 #[derive(Deserialize, Debug)]
-struct MinimiseScalarBoundedTest3
-{
+struct MinimiseScalarBoundedTest3 {
     bounds: (f64, f64),
     xmin: f64,
     fmin: f64,
-    niter: usize,
-    nfeval: usize,
 }
 
 #[derive(Deserialize, Debug)]
-struct MinimiseScalarBoundedTest2
-{
-    description: String,
+struct MinimiseScalarBoundedTest2 {
     values: MinimiseScalarBoundedTest3,
 }
 
 #[derive(Deserialize, Debug)]
-struct MinimiseScalarBoundedTest1
-{
+struct MinimiseScalarBoundedTest1 {
     minimise_scalar_bounded_test1: MinimiseScalarBoundedTest2,
     minimise_scalar_bounded_test2: MinimiseScalarBoundedTest2,
     minimise_scalar_bounded_test3: MinimiseScalarBoundedTest2,
@@ -198,10 +178,8 @@ struct MinimiseScalarBoundedTest1
     minimise_scalar_bounded_test10: MinimiseScalarBoundedTest2,
 }
 
-impl MinimiseScalarBoundedTest1
-{
-    fn new() -> Self
-    {
+impl MinimiseScalarBoundedTest1 {
+    fn new() -> Self {
         let json_file =
             fs::read_to_string("assets/minimise-scalar-bounded.json").expect("Unable to read file");
         serde_json::from_str(&json_file).expect("Could not deserialize")
@@ -211,8 +189,7 @@ impl MinimiseScalarBoundedTest1
 macro_rules! minimise_scalar_bounded_test {
     ($test_name: ident, $fcn: expr) => {
         #[test]
-        fn $test_name()
-        {
+        fn $test_name() {
             let tol = 1.0e-8;
             let test_data = MinimiseScalarBoundedTest1::new();
             let f = $fcn;
@@ -226,10 +203,7 @@ macro_rules! minimise_scalar_bounded_test {
             let res = minimize(&f, &opts);
             assert_eq!(res.is_ok(), true);
 
-            let res_ok = res.unwrap();                
-
-
-
+            let res_ok = res.unwrap();
 
             assert_relative_eq!(res_ok.xmin, test_data.$test_name.values.xmin, epsilon = tol);
             assert_relative_eq!(res_ok.fmin, test_data.$test_name.values.fmin, epsilon = tol);
@@ -243,11 +217,17 @@ macro_rules! minimise_scalar_bounded_test {
 
 minimise_scalar_bounded_test!(minimise_scalar_bounded_test1, |x: f64| x.exp() - 4.0 * x);
 minimise_scalar_bounded_test!(minimise_scalar_bounded_test2, |x: f64| 1e-8 * x * x);
-minimise_scalar_bounded_test!(minimise_scalar_bounded_test3, |x: f64| x.powi(2) + 0.1 * (50.0*x).sin());
-minimise_scalar_bounded_test!(minimise_scalar_bounded_test4, |x: f64| (x - 2.0).abs() + 1.0);
-minimise_scalar_bounded_test!(minimise_scalar_bounded_test5, |x: f64| (x.powi(2) - 4.0).powi(2));
+minimise_scalar_bounded_test!(minimise_scalar_bounded_test3, |x: f64| x.powi(2)
+    + 0.1 * (50.0 * x).sin());
+minimise_scalar_bounded_test!(minimise_scalar_bounded_test4, |x: f64| (x - 2.0).abs()
+    + 1.0);
+minimise_scalar_bounded_test!(minimise_scalar_bounded_test5, |x: f64| (x.powi(2) - 4.0)
+    .powi(2));
 minimise_scalar_bounded_test!(minimise_scalar_bounded_test6, |x: f64| x.exp() - 4.0 * x);
 minimise_scalar_bounded_test!(minimise_scalar_bounded_test7, |x: f64| 1e-8 * x * x);
-minimise_scalar_bounded_test!(minimise_scalar_bounded_test8, |x: f64| x.powi(2) + 0.1 * (50.0*x).sin());
-minimise_scalar_bounded_test!(minimise_scalar_bounded_test9, |x: f64| (x - 2.0).abs() + 1.0);
-minimise_scalar_bounded_test!(minimise_scalar_bounded_test10, |x: f64| (x.powi(2) - 4.0).powi(2));
+minimise_scalar_bounded_test!(minimise_scalar_bounded_test8, |x: f64| x.powi(2)
+    + 0.1 * (50.0 * x).sin());
+minimise_scalar_bounded_test!(minimise_scalar_bounded_test9, |x: f64| (x - 2.0).abs()
+    + 1.0);
+minimise_scalar_bounded_test!(minimise_scalar_bounded_test10, |x: f64| (x.powi(2) - 4.0)
+    .powi(2));

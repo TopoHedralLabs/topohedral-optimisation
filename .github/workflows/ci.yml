@@ -1,48 +1,55 @@
-name: ci 
+name: ci
 
 on: [push, pull_request]
 
 jobs:
-  all:
+  build-and-test:
     runs-on: ubuntu-latest
+    env:
+      CARGO_REGISTRIES_CLOUDSMITH_TOKEN: ${{ secrets.CLOUDSMITH_API_KEY }}
+      CARGO_REGISTRIES_CLOUDSMITH_INDEX: https://dl.cloudsmith.io/${{ secrets.CLOUDSMITH_TOKEN }}/topohedrallabs/topohedral/cargo/index.git
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Rust Nightly
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: nightly 
-        override: true
-        profile: minimal
+      - name: Install OpenBLAS
+        run: |
+          sudo apt update
+          sudo apt install -y libopenblas-dev
 
-    - name: Cache Cargo registry
-      uses: actions/cache@v3
-      with:
-        path: ~/.cargo/registry
-        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-registry-
+      - name: Set up Rust Nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          profile: minimal
 
-    - name: Cache Cargo build
-      uses: actions/cache@v3
-      with:
-        path: target
-        key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-build-
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
 
-    - name: Install Dependencies
-      run: cargo fetch
+      - name: Cache Cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-
 
-    - name: Check Formatting
-      run: cargo fmt -- --check
+      - name: Install Dependencies
+        run: cargo fetch
 
-    - name: Run Linter
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Check Formatting
+        run: cargo fmt -- --check
 
-    - name: Build Project
-      run: cargo build
+      - name: Run Linter
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
-    - name: Run Tests
-      run: cargo test --all-features
+      - name: Build Project
+        run: cargo build --all-targets --all-features
+
+      - name: Run Tests
+        run: cargo test --all-targets --all-features

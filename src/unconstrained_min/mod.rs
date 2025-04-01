@@ -3,42 +3,41 @@
 //! This module contains all of the unconstrained minimization algorithms.
 //--------------------------------------------------------------------------------------------------
 
-
-//{{{ crate imports 
-use crate::common::RealFn;
+//{{{ crate imports
+use crate::common::{GreaterThan, RealFn};
 //}}}
-//{{{ std imports 
+//{{{ std imports
 //}}}
-//{{{ dep imports 
+//{{{ dep imports
 //}}}
 //{{{ exports
 // exports from common
 mod common;
-pub use common::{Error,Method, Minimizer, Returns, Opts};
-// export conjugate gradient    
+pub use common::{Error, Method, Minimizer, Opts, Returns};
+// export conjugate gradient
 pub mod conjugate_gradient;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
-//{{{ fun: create 
+//{{{ fun: create
 /// Create a minimizer from a method
-/// 
+///
 /// This function is the entry point for the unconstrained minimization module.
-/// 
+///
 /// # Arguments
-/// - method: The method to use for the minimization. This enum contains a nested set of options 
-///           structs which together specify all aspacts of the minimization.
-/// # Returns 
+/// - method: The method to use for the minimization. This enum contains a nested set of options
+///   structs which together specify all aspacts of the minimization.
+/// # Returns
 /// - A boxed trait object that implements the `Minimizer` trait.
-pub fn create<const N: usize, F: RealFn<N> + 'static>(method: Method<N>)
--> Box<dyn Minimizer<N, F> >
-    where
+#[allow(clippy::identity_op)]
+pub fn create<const N: usize, F: RealFn<N> + 'static>(method: Method<N>) -> Box<dyn Minimizer<N, F>>
+where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     match method {
-        Method::CG(opts) => Box::new(conjugate_gradient::ConjugateGradient::new(opts))
+        Method::CG(opts) => Box::new(conjugate_gradient::ConjugateGradient::new(opts)),
     }
 }
 //}}}
-

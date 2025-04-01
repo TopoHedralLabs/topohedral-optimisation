@@ -5,39 +5,28 @@
 //! - Bounded method
 //--------------------------------------------------------------------------------------------------
 
-//{{{ crate imports 
+//{{{ crate imports
 //}}}
-//{{{ std imports 
-use core::{error, fmt};
-use std::fmt::format;
+//{{{ std imports
+use core::fmt;
 //}}}
-//{{{ dep imports 
+//{{{ dep imports
 use thiserror::Error;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
-
 //{{{ const:  GOLDERN_RATIO
-const GOLDERN_RATIO: f64 = 1.6180339887498948482;
+const GOLDERN_RATIO: f64 = 1.618_033_988_749_895;
 
 //}}}
 //{{{ enum:   Method
 /// Enum representing the set of supported minimization methods.
-#[derive(Debug, Clone)]
-pub enum Method
-{
+#[derive(Debug, Clone, Default)]
+pub enum Method {
+    #[default]
     Brent,
     Bounded,
 }
-
-impl Default for Method
-{
-    fn default() -> Self
-    {
-        Method::Brent
-    }
-}
-
 //}}}
 //{{{ enum:   Bounds
 /// Enum representing the set of supported bounds.
@@ -45,31 +34,16 @@ impl Default for Method
 /// - ``None``: Means that the user wishes for the bracket to be computed completely from scratch.
 /// - ``Pair``: Means that the user wishes for the bracket to be computed from an initial LB and UB
 /// - ``Triple``: Means that the user has provided the bracket bounds.
-#[derive(Copy, Clone, Debug)]
-pub enum Bounds
-{
+#[derive(Copy, Clone, Debug, Default)]
+pub enum Bounds {
+    #[default]
     None,
     Pair((f64, f64)),
     Triple((f64, f64, f64)),
 }
-
-impl Default for Bounds
-{
-    fn default() -> Self
-    {
-        Bounds::None
-    }
-}
-
-impl fmt::Display for Bounds
-{
-    fn fmt(
-        &self,
-        f: &mut fmt::Formatter,
-    ) -> fmt::Result
-    {
-        match self
-        {
+impl fmt::Display for Bounds {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
             Bounds::None => write!(f, "None"),
             Bounds::Pair((a, b)) => write!(f, "Pair({}, {})", a, b),
             Bounds::Triple((a, b, c)) => write!(f, "Triple({}, {}, {})", a, b, c),
@@ -82,36 +56,39 @@ impl fmt::Display for Bounds
 /// - ``MaxIterReached``: Means that the maximum number of iterations has been reached.
 /// - ``UnknownError``: Means that the minimization algorithm encountered an unknown error.
 #[derive(Error, Debug)]
-pub enum Error
-{
-    #[error("Max iterations of {max_iter} reached with x = {x} fx = {fx} num_funcalls = {num_funcalls}")]
-    MaxIterReached{max_iter: usize, x: f64, fx: f64, num_funcalls: usize},
+pub enum Error {
+    #[error(
+        "Max iterations of {max_iter} reached with x = {x} fx = {fx} num_funcalls = {num_funcalls}"
+    )]
+    MaxIterReached {
+        max_iter: usize,
+        x: f64,
+        fx: f64,
+        num_funcalls: usize,
+    },
     #[error("BracketNotFound:")]
     BracketNotFound((usize, bool, bool, bool)),
     #[error("BadOptions: {0}")]
     BadOptions(String),
     #[error("NaN encountered {0}")]
     NanEncountered(String),
-    #[error("Inf encountered {0}")] 
+    #[error("Inf encountered {0}")]
     InfEncountered(String),
     #[error("UnknownError")]
     UnknownError,
 }
 
 //}}}
-//{{{ struct: BracketOptions 
-pub struct BracketOptions
-{
+//{{{ struct: BracketOptions
+pub struct BracketOptions {
     pub a: f64,
     pub b: f64,
     pub growth_limit: f64,
     pub maxiter: usize,
 }
 
-impl Default for BracketOptions
-{
-    fn default() -> Self
-    {
+impl Default for BracketOptions {
+    fn default() -> Self {
         Self {
             a: 0.0,
             b: 1.0,
@@ -122,13 +99,7 @@ impl Default for BracketOptions
 }
 //}}}
 //{{{ fun:    brack_conds
-fn brack_conds<F: FnMut(f64) -> f64>(
-    a: f64,
-    b: f64,
-    c: f64,
-    mut f: F,
-) -> (bool, bool, bool)
-{
+fn brack_conds<F: FnMut(f64) -> f64>(a: f64, b: f64, c: f64, mut f: F) -> (bool, bool, bool) {
     let fa = f(a);
     let fb = f(b);
     let fc = f(c);
@@ -160,11 +131,11 @@ fn brack_conds<F: FnMut(f64) -> f64>(
 /// # Returns
 /// - `Ok((a, b, c, fa, fb, fc, funcalls))`: If the bracket was found.
 /// - `Err(ScalarError::BracketNotFound)`: If the bracket was not found.
+#[allow(clippy::type_complexity)]
 pub fn bracket<F: FnMut(f64) -> f64>(
     mut f: F,
     opts: &BracketOptions,
-) -> Result<(f64, f64, f64, f64, f64, f64, usize), Error>
-{
+) -> Result<(f64, f64, f64, f64, f64, f64, usize), Error> {
     let g = GOLDERN_RATIO;
     let very_small_num = 1e-21;
     let mut funcalls = 0;
@@ -173,8 +144,7 @@ pub fn bracket<F: FnMut(f64) -> f64>(
     let mut fa = f(a);
     let mut fb = f(b);
 
-    if fa < fb
-    {
+    if fa < fb {
         std::mem::swap(&mut a, &mut b);
         std::mem::swap(&mut fa, &mut fb);
     }
@@ -185,39 +155,31 @@ pub fn bracket<F: FnMut(f64) -> f64>(
     funcalls += 3;
     let mut iter = 0;
 
-    while (fc < fb) && (iter < opts.maxiter)
-    {
+    while (fc < fb) && (iter < opts.maxiter) {
         let tmp1 = (b - a) * (fb - fc);
         let tmp2 = (b - c) * (fb - fa);
         let val = tmp2 - tmp1;
-        let denom = if val.abs() < very_small_num
-        {
+        let denom = if val.abs() < very_small_num {
             2.0 * very_small_num
-        }
-        else
-        {
+        } else {
             2.0 * val
         };
 
         let mut w = b - ((b - c) * tmp2 - (b - a) * tmp1) / denom;
         let wlim = b + opts.growth_limit * (c - b);
-        let mut fw = 0.0;
+        let mut fw;
 
-        if (w - c) * (b - w) > 0.0
-        {
+        if (w - c) * (b - w) > 0.0 {
             fw = f(w);
             funcalls += 1;
 
-            if fw < fc
-            {
+            if fw < fc {
                 a = b;
                 b = w;
                 fa = fb;
                 fb = fw;
                 break;
-            }
-            else if fw > fb
-            {
+            } else if fw > fb {
                 c = w;
                 fc = fw;
                 break;
@@ -226,19 +188,14 @@ pub fn bracket<F: FnMut(f64) -> f64>(
             w = c + g * (c - b);
             fw = f(w);
             funcalls += 1;
-        }
-        else if (w - wlim) * (wlim - c) >= 0.0
-        {
+        } else if (w - wlim) * (wlim - c) >= 0.0 {
             w = wlim;
             fw = f(w);
             funcalls += 1;
-        }
-        else if (w - wlim) * (c - w) > 0.0
-        {
+        } else if (w - wlim) * (c - w) > 0.0 {
             fw = f(w);
             funcalls += 1;
-            if fw < fc
-            {
+            if fw < fc {
                 b = c;
                 c = w;
                 w = c + g * (c - b);
@@ -247,9 +204,7 @@ pub fn bracket<F: FnMut(f64) -> f64>(
                 fw = f(w);
                 funcalls += 1;
             }
-        }
-        else
-        {
+        } else {
             w = c + g * (c - b);
             fw = f(w);
             funcalls += 1;
@@ -266,34 +221,27 @@ pub fn bracket<F: FnMut(f64) -> f64>(
 
     let (cond1, cond2, cond3) = brack_conds(a, b, c, f);
 
-    let out = if cond1 && cond2 && cond3
-    {
+    if cond1 && cond2 && cond3 {
         Ok((a, b, c, fa, fb, fc, funcalls))
+    } else {
+        Err(Error::BracketNotFound (
+            (iter, cond1, cond2, cond3),
+        ))
     }
-    else
-    {
-        Err(Error::BracketNotFound {
-            0: (iter, cond1, cond2, cond3),
-        })
-    };
-    out
 }
 
 //}}}
 //{{{ struct: MinimizeOptions
 #[derive(Debug, Clone)]
-pub struct MinimizeOptions
-{
+pub struct MinimizeOptions {
     pub method: Method,
     pub bounds: Bounds,
     pub tol: f64,
     pub max_iter: usize,
 }
 
-impl Default for MinimizeOptions
-{
-    fn default() -> Self
-    {
+impl Default for MinimizeOptions {
+    fn default() -> Self {
         Self {
             method: Method::default(),
             bounds: Bounds::default(),
@@ -303,12 +251,10 @@ impl Default for MinimizeOptions
     }
 }
 
-
 //}}}
 //{{{ struct: MinimizeReturns
 #[derive(Default, Debug)]
-pub struct MinimizeReturns
-{
+pub struct MinimizeReturns {
     pub xmin: f64,
     pub fmin: f64,
     pub iter: usize,
@@ -316,8 +262,7 @@ pub struct MinimizeReturns
 }
 //}}}
 //{{{ struct: Brent
-struct Brent<F: FnMut(f64) -> f64>
-{
+struct Brent<F: FnMut(f64) -> f64> {
     // input members
     f: F,
     tol: f64,
@@ -332,13 +277,8 @@ struct Brent<F: FnMut(f64) -> f64>
     funcalls: usize,
 }
 
-impl<F: FnMut(f64) -> f64> Brent<F>
-{
-    fn new(
-        f: F,
-        opts: &MinimizeOptions,
-    ) -> Self
-    {
+impl<F: FnMut(f64) -> f64> Brent<F> {
+    fn new(f: F, opts: &MinimizeOptions) -> Self {
         Self {
             f,
             tol: opts.tol,
@@ -352,17 +292,14 @@ impl<F: FnMut(f64) -> f64> Brent<F>
         }
     }
 
-    fn get_bracket_bounds(&mut self) -> Result<(f64, f64, f64, f64, f64, f64, usize), Error>
-    {
-        let out = match self.bounds
-        {
-            Bounds::None =>
-            {
+    #[allow(clippy::type_complexity)]
+    fn get_bracket_bounds(&mut self) -> Result<(f64, f64, f64, f64, f64, f64, usize), Error> {
+        match self.bounds {
+            Bounds::None => {
                 let opts = BracketOptions::default();
                 bracket(&mut self.f, &opts)
             }
-            Bounds::Pair((a, b)) =>
-            {
+            Bounds::Pair((a, b)) => {
                 let opts = BracketOptions {
                     a,
                     b,
@@ -371,27 +308,21 @@ impl<F: FnMut(f64) -> f64> Brent<F>
 
                 bracket(&mut self.f, &opts)
             }
-            Bounds::Triple((a, b, c)) =>
-            {
+            Bounds::Triple((a, b, c)) => {
                 let (cond1, cond2, cond3) = brack_conds(a, b, c, &mut self.f);
-                if cond1 && cond2 && cond3
-                {
+                if cond1 && cond2 && cond3 {
                     let fa = (self.f)(a);
                     let fb = (self.f)(b);
                     let fc = (self.f)(c);
                     Ok((a, b, c, fa, fb, fc, 3))
-                }
-                else
-                {
+                } else {
                     Err(Error::BracketNotFound((0, cond1, cond2, cond2)))
                 }
             }
-        };
-        out
+        }
     }
 
-    fn optimize(&mut self) -> Result<(), Error>
-    {
+    fn optimize(&mut self) -> Result<(), Error> {
         // find the bracket in which the minimum occurs, or return an error
         let (xa, xb, xc, _fa, fb, _fc, mut funcalls) = self.get_bracket_bounds()?;
         // initialise local data
@@ -402,46 +333,37 @@ impl<F: FnMut(f64) -> f64> Brent<F>
         let mut deltax = 0.0f64;
         let mut iter = 0;
         let cg = 0.3819660;
-        let mut u = 0.0;
+        let mut u;
         let mut rat = 0.0;
         // begin the main algorithm
-        while iter < self.max_iter
-        {
+        while iter < self.max_iter {
             // set tolerances for iteration
             let tol1 = self._mintol + (self.tol * x.abs());
             let tol2 = 2.0 * tol1;
             // find mid point
             let xmid = 0.5 * (a + b);
             // test for convergence
-            if (x - xmid).abs() < (tol2 - 0.5 * (b - a))
-            {
+            if (x - xmid).abs() < (tol2 - 0.5 * (b - a)) {
                 break;
             }
 
             // main part of loop
-            if deltax.abs() <= tol1
-            {
+            if deltax.abs() <= tol1 {
                 //............... do golden section step
-                if x >= xmid
-                {
+                if x >= xmid {
                     deltax = a - x;
-                }
-                else
-                {
+                } else {
                     deltax = b - x;
                 }
                 rat = cg * deltax;
-            }
-            else
-            {
+            } else {
                 //............... do parabolic step
 
                 let tmp1 = (x - w) * (fx - fv);
                 let mut tmp2 = (x - v) * (fx - fw);
                 let mut p = (x - v) * tmp2 - (x - w) * tmp1;
                 tmp2 = 2.0 * (tmp2 - tmp1);
-                if tmp2 > 0.0
-                {
+                if tmp2 > 0.0 {
                     p = -p;
                 }
                 tmp2 = tmp2.abs();
@@ -455,27 +377,19 @@ impl<F: FnMut(f64) -> f64> Brent<F>
                 {
                     rat = p * (1.0 / tmp2);
                     u = x + rat;
-                    if ((u - a) < tol2) || ((b - u) < tol2)
-                    {
-                        if xmid - x >= 0.0
-                        {
+                    if ((u - a) < tol2) || ((b - u) < tol2) {
+                        if xmid - x >= 0.0 {
                             rat = tol1;
-                        }
-                        else
-                        {
+                        } else {
                             rat = -tol1;
                         }
                     }
-                }
-                else
+                } else
                 // if not, do golden section
                 {
-                    if x >= xmid
-                    {
+                    if x >= xmid {
                         deltax = a - x;
-                    }
-                    else
-                    {
+                    } else {
                         deltax = b - x;
                     }
                     rat = cg * deltax;
@@ -483,19 +397,13 @@ impl<F: FnMut(f64) -> f64> Brent<F>
             }
 
             // update by at least tol1
-            if rat.abs() < tol1
-            {
-                if rat >= 0.0
-                {
+            if rat.abs() < tol1 {
+                if rat >= 0.0 {
                     u = x + tol1;
-                }
-                else
-                {
+                } else {
                     u = x - tol1;
                 }
-            }
-            else
-            {
+            } else {
                 u = x + rat;
             }
 
@@ -503,38 +411,26 @@ impl<F: FnMut(f64) -> f64> Brent<F>
             let fu = (self.f)(u);
             funcalls += 1;
 
-            if fu > fx
-            {
-                if u < x
-                {
+            if fu > fx {
+                if u < x {
                     a = u;
-                }
-                else
-                {
+                } else {
                     b = u;
                 }
 
-                if (fu <= fw) || (w == x)
-                {
+                if (fu <= fw) || (w == x) {
                     v = w;
                     w = u;
                     fv = fw;
                     fw = fu;
-                }
-                else if (fu <= fv) || (v == x) || (v == w)
-                {
+                } else if (fu <= fv) || (v == x) || (v == w) {
                     v = u;
                     fv = fu;
                 }
-            }
-            else
-            {
-                if u >= x
-                {
+            } else {
+                if u >= x {
                     a = x;
-                }
-                else
-                {
+                } else {
                     b = x;
                 }
 
@@ -554,22 +450,22 @@ impl<F: FnMut(f64) -> f64> Brent<F>
         self.iter = iter;
         self.funcalls = funcalls;
 
-        let out = if iter == self.max_iter
-        {
-            Err(Error::MaxIterReached{max_iter: self.max_iter, x: x, fx: (self.f)(x), num_funcalls: funcalls})
-        }
-        else
-        {
+        if iter == self.max_iter {
+            Err(Error::MaxIterReached {
+                max_iter: self.max_iter,
+                x,
+                fx: (self.f)(x),
+                num_funcalls: funcalls,
+            })
+        } else {
             Ok(())
-        };
-        out
+        }
     }
 }
 
 //}}}
 //{{{ struct: Bounded
-struct Bounded<F: FnMut(f64) -> f64>
-{
+struct Bounded<F: FnMut(f64) -> f64> {
     // input members
     f: F,
     tol: f64,
@@ -582,41 +478,27 @@ struct Bounded<F: FnMut(f64) -> f64>
     funcalls: usize,
 }
 
-impl<F: FnMut(f64) -> f64> Bounded<F>
-{
-    fn new(
-        f: F,
-        opts: &MinimizeOptions,
-    ) -> Result<Self, Error>
-    {
-        let out = if let Bounds::Pair(bounds) = opts.bounds
-        {
+impl<F: FnMut(f64) -> f64> Bounded<F> {
+    fn new(f: F, opts: &MinimizeOptions) -> Result<Self, Error> {
+        let out = if let Bounds::Pair(bounds) = opts.bounds {
             Ok(Self {
                 f,
                 tol: opts.tol,
                 max_iter: opts.max_iter,
-                bounds: bounds,
+                bounds,
                 xmin: 0.0,
                 fmin: 0.0,
                 iter: 0,
                 funcalls: 0,
             })
-        }
-        else
-        {
-            Err(Error::BadOptions(format!(
-                "Invalid bounds {}",
-                opts.bounds
-            )))
+        } else {
+            Err(Error::BadOptions(format!("Invalid bounds {}", opts.bounds)))
         };
         out
     }
 
-    fn optimize(
-        &mut self        
-    ) -> Result<(), Error>
-    {
-        let (mut x1, mut x2) = self.bounds;
+    fn optimize(&mut self) -> Result<(), Error> {
+        let (x1, x2) = self.bounds;
 
         let sqrt_eps = f64::sqrt(f64::EPSILON);
         let golden_mean = 0.5 * (3.0 - f64::sqrt(5.0));
@@ -625,7 +507,7 @@ impl<F: FnMut(f64) -> f64> Bounded<F>
         let (mut nfc, mut xf) = (fulc, fulc);
         let (mut rat, mut e) = (0.0f64, 0.0f64);
         let mut x = xf;
-        let mut fx = (self.f)(x);        
+        let mut fx = (self.f)(x);
         let mut funcalls = 1;
         let mut fu = f64::INFINITY;
 
@@ -634,23 +516,20 @@ impl<F: FnMut(f64) -> f64> Bounded<F>
         let mut tol1 = sqrt_eps * xf.abs() + 0.333333 * self.tol;
         let mut tol2 = 2.0 * tol1;
 
-        let (mut r, mut q, mut p) = (0.0, 0.0, 0.0);
+        let (mut r, mut q, mut p);
         let mut num_iter = 0;
         let mut reached_max_iter = false;
 
-        while ((xf - xm).abs() > (tol2 - 0.5 * (b - a)))
-        {
+        while (xf - xm).abs() > (tol2 - 0.5 * (b - a)) {
             let mut golden = true;
             // check for parabolic fit
-            if e.abs() > tol1
-            {
+            if e.abs() > tol1 {
                 golden = false;
                 r = (xf - nfc) * (fx - ffulc);
                 q = (xf - fulc) * (fx - fnfc);
                 p = (xf - fulc) * q - (xf - nfc) * r;
                 q = 2.0 * (q - r);
-                if q > 0.0
-                {
+                if q > 0.0 {
                     p = -p;
                 }
                 q = q.abs();
@@ -658,31 +537,23 @@ impl<F: FnMut(f64) -> f64> Bounded<F>
                 e = rat;
 
                 // check for acceptability of the parabola
-                if (p.abs() < (0.5 * q * r)) && (p > q * (a - xf)) && (p < q * (b - xf))
-                {
+                if (p.abs() < (0.5 * q * r)) && (p > q * (a - xf)) && (p < q * (b - xf)) {
                     rat = (p + 0.0) / q;
                     x = xf + rat;
 
-                    if ((x - a) < tol2) || ((b - x) < tol2)
-                    {
+                    if ((x - a) < tol2) || ((b - x) < tol2) {
                         let si = sign(xm - xf) + (((xm == xf) as i32) as f64);
                         rat = tol1 * si;
                     }
-                }
-                else
-                {
+                } else {
                     golden = true;
                 }
             }
 
-            if golden
-            {
-                if xf >= xm
-                {
+            if golden {
+                if xf >= xm {
                     e = a - xf;
-                }
-                else
-                {
+                } else {
                     e = b - xf;
                 }
                 rat = golden_mean * e;
@@ -694,14 +565,10 @@ impl<F: FnMut(f64) -> f64> Bounded<F>
             funcalls += 1;
             num_iter += 1;
 
-            if fu <= fx
-            {
-                if x >= xf
-                {
+            if fu <= fx {
+                if x >= xf {
                     a = xf;
-                }
-                else
-                {
+                } else {
                     b = xf;
                 }
                 fulc = nfc;
@@ -710,34 +577,25 @@ impl<F: FnMut(f64) -> f64> Bounded<F>
                 fnfc = fx;
                 xf = x;
                 fx = fu;
-            }
-            else
-            {
-                if x < xf
-                {
+            } else {
+                if x < xf {
                     a = x;
-                }
-                else
-                {
+                } else {
                     b = x;
                 }
 
-                if (fu <= fnfc) || (nfc == xf)
-                {
+                if (fu <= fnfc) || (nfc == xf) {
                     fulc = nfc;
                     ffulc = fnfc;
                     nfc = x;
                     fnfc = fu;
-                }
-                else if (fu <= ffulc) || (fulc == xf) || (fulc == nfc)
-                {
+                } else if (fu <= ffulc) || (fulc == xf) || (fulc == nfc) {
                     fulc = x;
                     ffulc = fu;
                 }
             }
 
-            if num_iter >= self.max_iter
-            {
+            if num_iter >= self.max_iter {
                 reached_max_iter = true;
                 break;
             }
@@ -745,29 +603,26 @@ impl<F: FnMut(f64) -> f64> Bounded<F>
             xm = 0.5 * (a + b);
             tol1 = sqrt_eps * xf.abs() + 0.333333 * self.tol;
             tol2 = 2.0 * tol1;
-
         }
 
-        let out = if xf.is_nan() || fx.is_nan() || fu.is_nan()
-        {
+        let out = if xf.is_nan() || fx.is_nan() || fu.is_nan() {
             Err(Error::NanEncountered(format!(
                 "xf = {} fs = {} fu = {}",
                 xf, fx, fu
             )))
-        }
-        else if xf.is_infinite() || fx.is_infinite() || fu.is_infinite()
-        {
+        } else if xf.is_infinite() || fx.is_infinite() || fu.is_infinite() {
             Err(Error::InfEncountered(format!(
                 "xf = {} fs = {} fu = {}",
                 xf, fx, fu
             )))
-        }
-        else if reached_max_iter
-        {
-            Err(Error::MaxIterReached{max_iter: self.max_iter, x: xf, fx: fx, num_funcalls: funcalls}) 
-        }
-        else
-        {
+        } else if reached_max_iter {
+            Err(Error::MaxIterReached {
+                max_iter: self.max_iter,
+                x: xf,
+                fx,
+                num_funcalls: funcalls,
+            })
+        } else {
             self.xmin = xf;
             self.fmin = fx;
             self.iter = num_iter;
@@ -779,18 +634,12 @@ impl<F: FnMut(f64) -> f64> Bounded<F>
 }
 //}}}
 //{{{ fun:    sign
-fn sign(x: f64) -> f64
-{
-    if x > 0.0
-    {
+fn sign(x: f64) -> f64 {
+    if x > 0.0 {
         1.0
-    }
-    else if x < 0.0
-    {
+    } else if x < 0.0 {
         -1.0
-    }
-    else
-    {
+    } else {
         0.0
     }
 }
@@ -800,14 +649,11 @@ fn sign(x: f64) -> f64
 pub fn minimize<F: FnMut(f64) -> f64>(
     f: F,
     opts: &MinimizeOptions,
-) -> Result<MinimizeReturns, Error>
-{
+) -> Result<MinimizeReturns, Error> {
     let mut out = MinimizeReturns::default();
 
-    match opts.method
-    {
-        Method::Brent =>
-        {
+    match opts.method {
+        Method::Brent => {
             let mut brent = Brent::new(f, opts);
             brent.optimize()?;
             out.xmin = brent.xmin;
@@ -815,15 +661,13 @@ pub fn minimize<F: FnMut(f64) -> f64>(
             out.iter = brent.iter;
             out.funcalls = brent.funcalls;
         }
-        Method::Bounded =>
-        {
+        Method::Bounded => {
             let mut bounded = Bounded::new(f, opts)?;
             bounded.optimize()?;
             out.xmin = bounded.xmin;
             out.fmin = bounded.fmin;
             out.iter = bounded.iter;
             out.funcalls = bounded.funcalls;
-
         }
     };
     Ok(out)
@@ -833,9 +677,8 @@ pub fn minimize<F: FnMut(f64) -> f64>(
 //-------------------------------------------------------------------------------------------------
 //{{{ mod: tests
 #[cfg(test)]
-mod tests
-{
-  
+mod tests {
+
     use super::*;
     use approx::assert_relative_eq;
     use serde::Deserialize;
@@ -843,23 +686,19 @@ mod tests
     //..............................................................................................
 
     #[derive(Deserialize, Debug)]
-    struct BracketTest3
-    {
+    struct BracketTest3 {
         a: f64,
         b: f64,
         results: (f64, f64, f64, f64, f64, f64, usize),
     }
 
     #[derive(Deserialize, Debug)]
-    struct BracketTest2
-    {
-        description: String,
+    struct BracketTest2 {
         values: BracketTest3,
     }
 
     #[derive(Deserialize, Debug)]
-    struct BracketTest1
-    {
+    struct BracketTest1 {
         bracket_test1: BracketTest2,
         bracket_test2: BracketTest2,
         bracket_test3: BracketTest2,
@@ -867,10 +706,8 @@ mod tests
         bracket_test5: BracketTest2,
     }
 
-    impl BracketTest1
-    {
-        fn new() -> Self
-        {
+    impl BracketTest1 {
+        fn new() -> Self {
             let json_file = fs::read_to_string("assets/bracket.json").expect("Unable to read file");
             serde_json::from_str(&json_file).expect("Could not deserialize")
         }
@@ -879,8 +716,7 @@ mod tests
     macro_rules! bracket_test {
         ($test_name: ident) => {
             #[test]
-            fn $test_name()
-            {
+            fn $test_name() {
                 let tol = 5e-4;
                 let test_data = BracketTest1::new();
                 let a = test_data.$test_name.values.a;
@@ -911,26 +747,23 @@ mod tests
     bracket_test!(bracket_test4);
     bracket_test!(bracket_test5);
     #[test]
-    fn bracket_test_err1()
-    {
-        let f = |x: f64| 100.0;
+    fn bracket_test_err1() {
+        let f = |_x: f64| 100.0;
         let opts = BracketOptions::default();
         let out = bracket(&f, &opts);
-        assert_eq!(out.is_err(), true);
+        assert!(out.is_err());
     }
     #[test]
-    fn bracket_test_err2()
-    {
+    fn bracket_test_err2() {
         let f = |x: f64| x * x * x;
         let opts = BracketOptions::default();
         let out = bracket(&f, &opts);
-        assert_eq!(out.is_err(), true);
+        assert!(out.is_err());
     }
     //..............................................................................................
 
     #[derive(Deserialize, Debug)]
-    struct MinimiseScalarBrentTest3
-    {
+    struct MinimiseScalarBrentTest3 {
         bracket: (f64, f64, f64),
         xmin: f64,
         fmin: f64,
@@ -939,15 +772,12 @@ mod tests
     }
 
     #[derive(Deserialize, Debug)]
-    struct MinimiseScalarBrentTest2
-    {
-        description: String,
+    struct MinimiseScalarBrentTest2 {
         values: MinimiseScalarBrentTest3,
     }
 
     #[derive(Deserialize, Debug)]
-    struct MinimiseScalarBrentTest1
-    {
+    struct MinimiseScalarBrentTest1 {
         minimise_scalar_brent_test1: MinimiseScalarBrentTest2,
         minimise_scalar_brent_test2: MinimiseScalarBrentTest2,
         minimise_scalar_brent_test3: MinimiseScalarBrentTest2,
@@ -955,12 +785,10 @@ mod tests
         minimise_scalar_brent_test5: MinimiseScalarBrentTest2,
     }
 
-    impl MinimiseScalarBrentTest1
-    {
-        fn new() -> Self
-        {
-            let json_file =
-                fs::read_to_string("assets/minimise-scalar-brent.json").expect("Unable to read file");
+    impl MinimiseScalarBrentTest1 {
+        fn new() -> Self {
+            let json_file = fs::read_to_string("assets/minimise-scalar-brent.json")
+                .expect("Unable to read file");
             serde_json::from_str(&json_file).expect("Could not deserialize")
         }
     }
@@ -968,8 +796,7 @@ mod tests
     macro_rules! minimise_scalar_brent_test {
         ($test_name: ident, $fcn: expr) => {
             #[test]
-            fn $test_name()
-            {
+            fn $test_name() {
                 let tol = 1.0e-6;
                 let test_data = MinimiseScalarBrentTest1::new();
                 let f = $fcn;
@@ -994,31 +821,27 @@ mod tests
 
     minimise_scalar_brent_test!(minimise_scalar_brent_test1, |x: f64| x.exp() - 4.0 * x);
     minimise_scalar_brent_test!(minimise_scalar_brent_test2, |x: f64| 1.0e-8 * x.powi(2));
-    minimise_scalar_brent_test!(minimise_scalar_brent_test3, |x: f64| x.powi(2) + 0.1 * (50.0 * x).sin());
+    minimise_scalar_brent_test!(minimise_scalar_brent_test3, |x: f64| x.powi(2)
+        + 0.1 * (50.0 * x).sin());
     minimise_scalar_brent_test!(minimise_scalar_brent_test4, |x: f64| (x - 2.0).abs() + 1.0);
-    minimise_scalar_brent_test!(minimise_scalar_brent_test5, |x: f64| (x.powi(2) - 4.0).powi(2));
+    minimise_scalar_brent_test!(minimise_scalar_brent_test5, |x: f64| (x.powi(2) - 4.0)
+        .powi(2));
     //..............................................................................................
 
     #[derive(Deserialize, Debug)]
-    struct MinimiseScalarBoundedTest3
-    {
+    struct MinimiseScalarBoundedTest3 {
         bounds: (f64, f64),
         xmin: f64,
         fmin: f64,
-        niter: usize,
-        nfeval: usize,
     }
 
     #[derive(Deserialize, Debug)]
-    struct MinimiseScalarBoundedTest2
-    {
-        description: String,
+    struct MinimiseScalarBoundedTest2 {
         values: MinimiseScalarBoundedTest3,
     }
 
     #[derive(Deserialize, Debug)]
-    struct MinimiseScalarBoundedTest1
-    {
+    struct MinimiseScalarBoundedTest1 {
         minimise_scalar_bounded_test1: MinimiseScalarBoundedTest2,
         minimise_scalar_bounded_test2: MinimiseScalarBoundedTest2,
         minimise_scalar_bounded_test3: MinimiseScalarBoundedTest2,
@@ -1031,12 +854,10 @@ mod tests
         minimise_scalar_bounded_test10: MinimiseScalarBoundedTest2,
     }
 
-    impl MinimiseScalarBoundedTest1
-    {
-        fn new() -> Self
-        {
-            let json_file =
-                fs::read_to_string("assets/minimise-scalar-bounded.json").expect("Unable to read file");
+    impl MinimiseScalarBoundedTest1 {
+        fn new() -> Self {
+            let json_file = fs::read_to_string("assets/minimise-scalar-bounded.json")
+                .expect("Unable to read file");
             serde_json::from_str(&json_file).expect("Could not deserialize")
         }
     }
@@ -1044,8 +865,7 @@ mod tests
     macro_rules! minimise_scalar_bounded_test {
         ($test_name: ident, $fcn: expr) => {
             #[test]
-            fn $test_name()
-            {
+            fn $test_name() {
                 let tol = 1.0e-8;
                 let test_data = MinimiseScalarBoundedTest1::new();
                 let f = $fcn;
@@ -1059,10 +879,7 @@ mod tests
                 let res = minimize(&f, &opts);
                 assert_eq!(res.is_ok(), true);
 
-                let res_ok = res.unwrap();                
-
-
-
+                let res_ok = res.unwrap();
 
                 assert_relative_eq!(res_ok.xmin, test_data.$test_name.values.xmin, epsilon = tol);
                 assert_relative_eq!(res_ok.fmin, test_data.$test_name.values.fmin, epsilon = tol);
@@ -1076,13 +893,19 @@ mod tests
 
     minimise_scalar_bounded_test!(minimise_scalar_bounded_test1, |x: f64| x.exp() - 4.0 * x);
     minimise_scalar_bounded_test!(minimise_scalar_bounded_test2, |x: f64| 1e-8 * x * x);
-    minimise_scalar_bounded_test!(minimise_scalar_bounded_test3, |x: f64| x.powi(2) + 0.1 * (50.0*x).sin());
-    minimise_scalar_bounded_test!(minimise_scalar_bounded_test4, |x: f64| (x - 2.0).abs() + 1.0);
-    minimise_scalar_bounded_test!(minimise_scalar_bounded_test5, |x: f64| (x.powi(2) - 4.0).powi(2));
+    minimise_scalar_bounded_test!(minimise_scalar_bounded_test3, |x: f64| x.powi(2)
+        + 0.1 * (50.0 * x).sin());
+    minimise_scalar_bounded_test!(minimise_scalar_bounded_test4, |x: f64| (x - 2.0).abs()
+        + 1.0);
+    minimise_scalar_bounded_test!(minimise_scalar_bounded_test5, |x: f64| (x.powi(2) - 4.0)
+        .powi(2));
     minimise_scalar_bounded_test!(minimise_scalar_bounded_test6, |x: f64| x.exp() - 4.0 * x);
     minimise_scalar_bounded_test!(minimise_scalar_bounded_test7, |x: f64| 1e-8 * x * x);
-    minimise_scalar_bounded_test!(minimise_scalar_bounded_test8, |x: f64| x.powi(2) + 0.1 * (50.0*x).sin());
-    minimise_scalar_bounded_test!(minimise_scalar_bounded_test9, |x: f64| (x - 2.0).abs() + 1.0);
-    minimise_scalar_bounded_test!(minimise_scalar_bounded_test10, |x: f64| (x.powi(2) - 4.0).powi(2));
+    minimise_scalar_bounded_test!(minimise_scalar_bounded_test8, |x: f64| x.powi(2)
+        + 0.1 * (50.0 * x).sin());
+    minimise_scalar_bounded_test!(minimise_scalar_bounded_test9, |x: f64| (x - 2.0).abs()
+        + 1.0);
+    minimise_scalar_bounded_test!(minimise_scalar_bounded_test10, |x: f64| (x.powi(2) - 4.0)
+        .powi(2));
 }
 //}}}
