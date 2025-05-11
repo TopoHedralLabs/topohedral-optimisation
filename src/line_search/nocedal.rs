@@ -4,16 +4,15 @@
 //--------------------------------------------------------------------------------------------------
 
 //{{{ crate imports
-use crate::common::{RealFn, SMatrix, SVector};
+use crate::common::*;
 use crate::line_search::{
-    satisfies_armijo, satisfies_wolfe, Error, LineSearch, LineSearchFn, LineSearchOpts,
-    LineSearchReturns,
+    satisfies_armijo, Error, LineSearch, LineSearchFn, LineSearchOpts, LineSearchReturns,
 };
 //}}}
 //{{{ std imports
 //}}}
 //{{{ dep imports
-use topohedral_linalg::MatMul;
+use topohedral_linalg::smatrix::MatMul;
 use topohedral_tracing::*;
 //}}}
 //--------------------------------------------------------------------------------------------------
@@ -67,7 +66,7 @@ fn quadmin(a: f64, phi_a: f64, dphi_a: f64, b: f64, phi_b: f64) -> Option<f64> {
     error!(target: "ls", "Returning alpha_min = {:1.4e}", alpha_min);
     error!(target: "ls", "--- Leaving quadmin ---");
     //}}}
-    return Some(alpha_min);
+    Some(alpha_min)
 }
 //}}}
 //{{{ fun: cubicmin
@@ -135,10 +134,11 @@ fn cubicmin(
     error!(target: "ls", "Returning alpha_min = {:1.4e}", alpha_min);
     error!(target: "ls", "--- Leaving cubicmin ---");
     //}}}
-    return Some(alpha_min);
+    Some(alpha_min)
 }
 //}}}
 //{{{ fun: zoom
+#[allow(clippy::too_many_arguments, clippy::identity_op)]
 fn zoom<const N: usize, F: RealFn<N>>(
     mut a_lo: f64,
     mut a_hi: f64,
@@ -155,6 +155,7 @@ fn zoom<const N: usize, F: RealFn<N>>(
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     //{{{ trace
     error!(target: "ls", "--- Entering zoom ---");
@@ -293,20 +294,24 @@ pub struct NocedalOpts {
 }
 //}}}
 //{{{ struct NocedalLineSearch
+#[allow(clippy::identity_op)]
 pub struct NocedalLineSearch<const N: usize, F: RealFn<N>>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     pub(crate) f: LineSearchFn<N, F>,
     pub opts: NocedalOpts,
 }
 //}}}
 //{{{ impl: NocedalLineSearch
+#[allow(clippy::identity_op)]
 impl<const N: usize, F: RealFn<N>> NocedalLineSearch<N, F>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     pub fn new(f: F, x: SVector<N>, dir: SVector<N>, opts: NocedalOpts) -> Self {
         Self {
@@ -317,10 +322,12 @@ where
 }
 //}}}
 //{{{ impl: LineSearch for NocedalLineSearch
+#[allow(clippy::identity_op)]
 impl<const N: usize, F: RealFn<N>> LineSearch<N> for NocedalLineSearch<N, F>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     fn line_search(&mut self, phi0: f64, dphi0: f64) -> Result<LineSearchReturns, Error> {
         //{{{ trace
@@ -387,7 +394,7 @@ where
                     self.opts.zoom_max_iter,
                 );
 
-                let (alpha_tmp, phi_tmp, dphi_tmp, funcalls_tmp, gradcalls_tmp) = match zoom_result
+                let (alpha_tmp, phi_tmp, _dphi_tmp, funcalls_tmp, gradcalls_tmp) = match zoom_result
                 {
                     None => {
                         //{{{ trace
@@ -409,8 +416,8 @@ where
                 return Ok(LineSearchReturns {
                     alpha: alpha_tmp,
                     falpha: phi_tmp,
-                    funcalls: funcalls,
-                    gradcalls: gradcalls,
+                    funcalls,
+                    gradcalls,
                 });
             }
 
@@ -427,8 +434,8 @@ where
                 return Ok(LineSearchReturns {
                     alpha: alpha1,
                     falpha: phi_a1,
-                    funcalls: funcalls,
-                    gradcalls: gradcalls,
+                    funcalls,
+                    gradcalls,
                 });
             }
 
@@ -449,7 +456,7 @@ where
                     c2,
                     self.opts.zoom_max_iter,
                 );
-                let (alpha_tmp, phi_tmp, dphi_tmp, funcalls_tmp, gradcalls_tmp) = match zoom_result
+                let (alpha_tmp, phi_tmp, _dphi_tmp, funcalls_tmp, gradcalls_tmp) = match zoom_result
                 {
                     None => {
                         //{{{  trace
@@ -457,14 +464,14 @@ where
                         error!(target: "ls", "--- Leaving line_search ---");
                         //}}}
                         return Err(Error::NotDecreasing);
-                    },
+                    }
                     Some(result) => {
                         //{{{ trace
                         trace!(target: "ls","Zoom succeeded with result {:1.4e} {:1.4e} {:1.4e} {} {}", 
                                   result.0, result.1, result.2, result.3, result.4);
                         //}}}
                         result
-                    },
+                    }
                 };
 
                 funcalls += funcalls_tmp;
@@ -477,8 +484,8 @@ where
                 return Ok(LineSearchReturns {
                     alpha: alpha_tmp,
                     falpha: phi_tmp,
-                    funcalls: funcalls,
-                    gradcalls: gradcalls,
+                    funcalls,
+                    gradcalls,
                 });
             }
 
@@ -494,15 +501,15 @@ where
         }
 
         //{{{ trace
-        error!("Reached max number of iterations"); 
+        error!("Reached max number of iterations");
         error!(target: "ls", "--- Leaving line_search ---");
         //}}}
-        return Ok(LineSearchReturns {
+        Ok(LineSearchReturns {
             alpha: alpha1,
             falpha: phi_a1,
-            funcalls: funcalls,
-            gradcalls: gradcalls,
-        });
+            funcalls,
+            gradcalls,
+        })
     }
 
     fn set_location_and_direction(&mut self, x: SVector<N>, dir: SVector<N>) {
@@ -525,9 +532,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::line_search::{create, FnMutWrap, LineSearchMethod};
+    use crate::common::FnMutWrap;
+    use crate::line_search::{create, LineSearchMethod};
     use approx::assert_relative_eq;
-    use topohedral_linalg::EvaluateSMatrix;
 
     //{{{ collection: quadmin tests
     #[test]
@@ -539,7 +546,7 @@ mod tests {
 
     #[test]
     fn test_quadmin_small_interval() {
-        let result = quadmin(1.0, 2.0, -1.0, 1.0 + 1e-11, 2.0);
+        let _result = quadmin(1.0, 2.0, -1.0, 1.0 + 1e-11, 2.0);
         // assert!(result.is_none());
     }
 
@@ -588,16 +595,12 @@ mod tests {
     //{{{ collection: zoom tests
     #[test]
     fn test_zoom_quad_left() {
-        let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 { (x[0] - 2.0).powi(2) });
+        let f = FnMutWrap::new(|x: &SVector<2>| -> f64 { (x[0] - 2.0).powi(2) });
 
-        let x = SVector::<2>::from_slice(&[0.0, 0.0]);
-        let dir = SVector::<2>::from_slice(&[1.0, 0.0]);
+        let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
+        let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
 
-        let mut fline = LineSearchFn {
-            f: f.clone(),
-            x: x.clone(),
-            dir: dir.clone(),
-        };
+        let mut fline = LineSearchFn { f, x, dir };
 
         let phi0 = fline.eval(0.0);
         let dphi0 = fline.eval_diff(0.0);
@@ -615,16 +618,12 @@ mod tests {
 
     #[test]
     fn test_zoom_quad_center() {
-        let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 { (x[0] - 2.0).powi(2) });
+        let f = FnMutWrap::new(|x: &SVector<2>| -> f64 { (x[0] - 2.0).powi(2) });
 
-        let x = SVector::<2>::from_slice(&[0.0, 0.0]);
-        let dir = SVector::<2>::from_slice(&[1.0, 0.0]);
+        let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
+        let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
 
-        let mut fline = LineSearchFn {
-            f: f.clone(),
-            x: x.clone(),
-            dir: dir.clone(),
-        };
+        let mut fline = LineSearchFn { f, x, dir };
 
         let a0 = -10.0;
         let phi0 = fline.eval(a0);
@@ -647,16 +646,12 @@ mod tests {
 
     #[test]
     fn test_zoom_quad_right_none() {
-        let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 { (x[0] - 2.0).powi(2) });
+        let f = FnMutWrap::new(|x: &SVector<2>| -> f64 { (x[0] - 2.0).powi(2) });
 
-        let x = SVector::<2>::from_slice(&[0.0, 0.0]);
-        let dir = SVector::<2>::from_slice(&[1.0, 0.0]);
+        let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
+        let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
 
-        let mut fline = LineSearchFn {
-            f: f.clone(),
-            x: x.clone(),
-            dir: dir.clone(),
-        };
+        let mut fline = LineSearchFn { f, x, dir };
 
         let a0 = 3.0;
         let phi0 = fline.eval(a0);
@@ -675,16 +670,12 @@ mod tests {
 
     #[test]
     fn test_zoom_quad_right_some() {
-        let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 { (x[0] - 2.0).powi(2) });
+        let f = FnMutWrap::new(|x: &SVector<2>| -> f64 { (x[0] - 2.0).powi(2) });
 
-        let x = SVector::<2>::from_slice(&[0.0, 0.0]);
-        let dir = SVector::<2>::from_slice(&[1.0, 0.0]);
+        let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
+        let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
 
-        let mut fline = LineSearchFn {
-            f: f.clone(),
-            x: x.clone(),
-            dir: dir.clone(),
-        };
+        let mut fline = LineSearchFn { f, x, dir };
 
         let a0 = 1.0;
         let phi0 = fline.eval(a0);
@@ -710,8 +701,8 @@ mod tests {
     fn test_fcn1() {
         let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 { x[0].powi(2) + x[1].powi(2) });
 
-        let x = SVector::<2>::from_slice(&[1.0, 1.0]);
-        let dir = SVector::<2>::from_slice(&[-1.0, -1.0]);
+        let x = SVector::<2>::from_col_slice(&[1.0, 1.0]);
+        let dir = SVector::<2>::from_col_slice(&[-1.0, -1.0]);
 
         let method = LineSearchMethod::Nocedal(NocedalOpts {
             ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
@@ -748,15 +739,13 @@ mod tests {
             zoom_max_iter: 10,
         });
 
-        let mut x = SVector::<2>::from_slice(&[0.0, 0.0]);
-        let mut dir = SVector::<2>::from_slice(&[1.0, 0.0]);
+        let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
+        let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
         let mut line_searcher = create(f.clone(), x, dir, method);
 
         let phi0 = f.eval(&x);
         let dphi0 = f.grad(&x).dot(&dir);
         let res = line_searcher.line_search(phi0, dphi0);
-
-        println!("{:?}", res);
 
         assert!(res.is_ok());
         let res = res.unwrap();

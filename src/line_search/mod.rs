@@ -1,31 +1,31 @@
 //! The line search module implements the set of line search algorithms for this crate.
 //!
-//! 
+//!
 //! # Introduction
 //! Line search algorithms approximately solve the problem:
-//! 
+//!
 //! $$
 //! \min_{\alpha \in \mathbb{R}} f(\mathbf{x} + \alpha \mathbf{d})
 //! $$
-//! 
-//! wwhere $\mathbf{x}$ is the current location, $\mathbf{d}$ is the search direction, and $f$ is 
+//!
+//! wwhere $\mathbf{x}$ is the current location, $\mathbf{d}$ is the search direction, and $f$ is
 //! the multivariate objective function being minimized.
-//! The purpose of line search methods is to find a step that is "good enough" using fewer function 
+//! The purpose of line search methods is to find a step that is "good enough" using fewer function
 //! and derivative evaluations than a full 1D minimization. The set of supported algorithms are:
-//! 
+//!
 //! - Fixed Step: Fixed step size, unconditionally accept step
 //! - Backtracking: Simple backtracking using bisection
 //! - Nocedal: Nocedal's line search method
 //! - Thuente: Thuente's line search method
-//! 
+//!
 //! # Line Search Algorithms
-//! 
+//!
 //! ## Fixed Step
-//! 
+//!
 //! ## Backtracking
-//! 
+//!
 //! ## Nocedal
-//! 
+//!
 //! ## Thuente
 //--------------------------------------------------------------------------------------------------
 
@@ -35,8 +35,8 @@ mod nocedal;
 mod thuente;
 
 //{{{ crate imports
-use crate::common::{EvaluateSMatrix, SMatrix, SVector};
-use crate::common::{FnMutWrap, RealFn};
+use crate::common::RealFn;
+use crate::common::{EvaluateSMatrix, GreaterThan, SVector, VectorOps};
 
 pub use crate::line_search::backtracking::{BacktrackingLineSearch, BacktrackingOpts};
 pub use crate::line_search::fixed_step::{FixedStepLineSearch, FixedStepOpts};
@@ -96,10 +96,12 @@ pub struct LineSearchReturns {
 }
 //}}}
 //{{{ struct: LineSearchFn
+#[allow(clippy::identity_op)]
 pub(crate) struct LineSearchFn<const N: usize, F: RealFn<N>>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     f: F,
     pub x: SVector<N>,
@@ -115,17 +117,15 @@ pub enum LineSearchMethod {
 }
 //}}}
 //{{{ impl: LineSearchFn
+#[allow(clippy::identity_op)]
 impl<const N: usize, F: RealFn<N>> LineSearchFn<N, F>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     fn new(f: F, x: SVector<N>, dir: SVector<N>) -> Self {
-        Self {
-            f: f,
-            x: x,
-            dir: dir,
-        }
+        Self { f, x, dir }
     }
 
     fn eval(&mut self, alpha: f64) -> f64 {
@@ -171,16 +171,17 @@ fn satisfies_wolfe(
     //{{{ trace
     trace!(target: "ls", "phi0 = {:1.4e} dphi0 = {:1.4e} phi1 = {:1.4e} dphi1 = {:1.4e} alpha = {:1.4e}", phi0, dphi0, phi1, dphi1, alpha);
     //}}}
-    if !satisfies_armijo(c1, alpha, phi0, dphi0, phi1){
+    if !satisfies_armijo(c1, alpha, phi0, dphi0, phi1) {
         return Err(Error::Armijo);
     }
-    if !satisfies_curvature(c2, dphi0, dphi1){
+    if !satisfies_curvature(c2, dphi0, dphi1) {
         return Err(Error::Curvature);
     }
     Ok(())
 }
 //}}}
 //{{{ trait: LineSearch
+#[allow(clippy::identity_op)]
 pub trait LineSearch<const N: usize>
 where
     [(); N * 1]:,
@@ -194,6 +195,7 @@ where
 //}}}
 //{{{ fun: create
 /// Factory function to create a line search algorithm given some options.
+#[allow(clippy::identity_op)]
 pub fn create<'a, const N: usize, F: RealFn<N> + 'a>(
     f: F,
     x: SVector<N>,
@@ -203,6 +205,7 @@ pub fn create<'a, const N: usize, F: RealFn<N> + 'a>(
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     let f_line_search = LineSearchFn::new(f, x, dir);
 
@@ -228,20 +231,18 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::common::FnMutWrap;
 
     #[test]
     fn test_create() {
         let f = FnMutWrap::new(|x: &SVector<2>| x[0] * x[0] + x[1] * x[1]);
-        let x = SVector::from_slice(&[1.0, 1.0]);
-        let dir = SVector::from_slice(&[1.0, 1.0]);
+        let x = SVector::from_col_slice(&[1.0, 1.0]);
+        let dir = SVector::from_col_slice(&[1.0, 1.0]);
         let opts = LineSearchMethod::FixedStep(FixedStepOpts {
-            ls_opts: LineSearchOpts {
-                c1: 0.1,
-                c2: 0.9,
-            },
+            ls_opts: LineSearchOpts { c1: 0.1, c2: 0.9 },
             step_size: 0.1,
         });
-        let mut line_search = create(f, x, dir, opts);
+        let mut _line_search = create(f, x, dir, opts);
     }
     //}}}
 }

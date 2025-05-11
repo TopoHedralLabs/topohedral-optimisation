@@ -3,10 +3,8 @@
 //--------------------------------------------------------------------------------------------------
 
 //{{{ crate imports
-use crate::common::{RealFn, SMatrix, SVector};
-use crate::line_search::{
-    satisfies_wolfe, Error, LineSearch, LineSearchFn, LineSearchOpts, LineSearchReturns,
-};
+use crate::common::{GreaterThan, RealFn, SVector};
+use crate::line_search::{Error, LineSearch, LineSearchFn, LineSearchOpts, LineSearchReturns};
 //}}}
 //{{{ std imports
 //}}}
@@ -22,19 +20,24 @@ pub struct FixedStepOpts {
 }
 //}}}
 //{{{ struct: FixedStepLineSearch
+#[allow(clippy::identity_op)]
 pub struct FixedStepLineSearch<const N: usize, F: RealFn<N>>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     pub(crate) f: LineSearchFn<N, F>,
     pub opts: FixedStepOpts,
 }
 //}}}
+//{{{ impl: FixedStepLineSearch
+#[allow(clippy::identity_op)]
 impl<const N: usize, F: RealFn<N>> FixedStepLineSearch<N, F>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     pub fn new(f: F, x: SVector<N>, dir: SVector<N>, opts: FixedStepOpts) -> Self {
         Self {
@@ -43,14 +46,16 @@ where
         }
     }
 }
+//}}}
 //{{{ impl: LineSearch for FixedStepLineSearch
+#[allow(clippy::identity_op)]
 impl<const N: usize, F: RealFn<N>> LineSearch<N> for FixedStepLineSearch<N, F>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
-    fn line_search(&mut self, phi0: f64, dphi0: f64) -> Result<LineSearchReturns, Error> {
-
+    fn line_search(&mut self, _phi0: f64, dphi0: f64) -> Result<LineSearchReturns, Error> {
         if dphi0 > 0.0 {
             return Err(Error::NotDecreasing);
         }
@@ -85,9 +90,8 @@ where
 //{{{ mod: tests
 #[cfg(test)]
 mod tests {
-    use crate::common::FnMutWrap;
-    use crate::line_search::{create, satisfies_armijo, satisfies_curvature, BacktrackingOpts, LineSearchMethod};
-    use topohedral_linalg::EvaluateSMatrix;
+    use crate::common::{EvaluateSMatrix, FnMutWrap, VectorOps};
+    use crate::line_search::{create, satisfies_armijo, satisfies_curvature, LineSearchMethod};
 
     use approx::assert_abs_diff_eq;
 
@@ -97,8 +101,8 @@ mod tests {
     fn test_fcn1_ok() {
         let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 { x[0].powi(2) + x[1].powi(2) });
 
-        let x = SVector::<2>::from_slice(&[1.0, 1.0]);
-        let dir = SVector::<2>::from_slice(&[-1.0, -1.0]);
+        let x = SVector::<2>::from_col_slice(&[1.0, 1.0]);
+        let dir = SVector::<2>::from_col_slice(&[-1.0, -1.0]);
 
         let method = LineSearchMethod::FixedStep(FixedStepOpts {
             ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
@@ -123,8 +127,8 @@ mod tests {
     fn test_fcn1_armijo_err() {
         let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 { x[0].powi(2) + x[1].powi(2) });
 
-        let x = SVector::<2>::from_slice(&[1.0, 1.0]);
-        let dir = SVector::<2>::from_slice(&[-1.0, -1.0]);
+        let x = SVector::<2>::from_col_slice(&[1.0, 1.0]);
+        let dir = SVector::<2>::from_col_slice(&[-1.0, -1.0]);
 
         let method = LineSearchMethod::FixedStep(FixedStepOpts {
             ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
@@ -144,8 +148,8 @@ mod tests {
     fn test_fcn1_non_decreasing_err() {
         let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 { x[0].powi(2) + x[1].powi(2) });
 
-        let x = SVector::<2>::from_slice(&[1.0, 1.0]);
-        let dir = SVector::<2>::from_slice(&[1.0, 1.0]);
+        let x = SVector::<2>::from_col_slice(&[1.0, 1.0]);
+        let dir = SVector::<2>::from_col_slice(&[1.0, 1.0]);
 
         let method = LineSearchMethod::FixedStep(FixedStepOpts {
             ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
@@ -170,8 +174,8 @@ mod tests {
             -alpha / (alpha.powi(2) + beta)
         });
 
-        let x = SVector::<2>::from_slice(&[0.0, 0.0]);
-        let dir = SVector::<2>::from_slice(&[1.0, 0.0]);
+        let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
+        let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
 
         let method = LineSearchMethod::FixedStep(FixedStepOpts {
             ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
@@ -195,8 +199,8 @@ mod tests {
             -alpha / (alpha.powi(2) + beta)
         });
 
-        let x = SVector::<2>::from_slice(&[10.0, 0.0]);
-        let dir = SVector::<2>::from_slice(&[-1.0, 0.0]);
+        let x = SVector::<2>::from_col_slice(&[10.0, 0.0]);
+        let dir = SVector::<2>::from_col_slice(&[-1.0, 0.0]);
 
         let method = LineSearchMethod::FixedStep(FixedStepOpts {
             ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
@@ -221,8 +225,8 @@ mod tests {
             (alpha + beta).powi(5) - 2.0 * (alpha + beta).powi(4)
         });
 
-        let x = SVector::<2>::from_slice(&[2.0, 0.0]);
-        let dir = SVector::<2>::from_slice(&[-1.0, 0.0]);
+        let x = SVector::<2>::from_col_slice(&[2.0, 0.0]);
+        let dir = SVector::<2>::from_col_slice(&[-1.0, 0.0]);
 
         let method = LineSearchMethod::FixedStep(FixedStepOpts {
             ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
@@ -244,8 +248,8 @@ mod tests {
             (alpha + beta).powi(5) - 2.0 * (alpha + beta).powi(4)
         });
 
-        let x = SVector::<2>::from_slice(&[0.0, 0.0]);
-        let dir = SVector::<2>::from_slice(&[1.0, 0.0]);
+        let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
+        let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
 
         let method = LineSearchMethod::FixedStep(FixedStepOpts {
             ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },

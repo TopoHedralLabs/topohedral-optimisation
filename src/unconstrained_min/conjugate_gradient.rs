@@ -6,7 +6,7 @@
 
 //{{{ crate imports
 use crate::{
-    common::{RealFn, SVector},
+    common::{EvaluateSMatrix, GreaterThan, RealFn, SVector, VectorOps},
     line_search as ls,
     line_search::{LineSearch, LineSearchReturns},
 };
@@ -18,7 +18,6 @@ use crate::line_search::create;
 //{{{ std imports
 //}}}
 //{{{ dep imports
-use topohedral_linalg::EvaluateSMatrix;
 use topohedral_tracing::*;
 //}}}
 //--------------------------------------------------------------------------------------------------
@@ -33,17 +32,11 @@ pub enum ConvergedReason {
 /// Specifies the method used to update the search direction in the conjugate gradient algorithm.
 /// - `FletcherReeves`: Uses the Fletcher-Reeves formula to update the search direction.
 /// - `PolakRibiere`: Uses the Polak-Ribiere formula to update the search direction.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum DirectionMethod {
+    #[default]
     FletcherReeves,
     PolakRibiere,
-}
-//}}}
-//{{{ impl: Default for DirectionMethod
-impl Default for DirectionMethod {
-    fn default() -> Self {
-        DirectionMethod::FletcherReeves
-    }
 }
 //}}}
 //{{{ struct: Opts
@@ -51,6 +44,7 @@ impl Default for DirectionMethod {
 /// The `Opts` struct contains the unconstrained optimization options and the
 /// direction update method to use for the conjugate gradient algorithm.
 #[derive(Debug, Clone)]
+#[allow(clippy::identity_op)]
 pub struct Opts<const N: usize>
 where
     [(); N * 1]:,
@@ -64,20 +58,25 @@ where
 /// A struct that represents the conjugate gradient optimization method.
 /// The `ConjugateGradient` struct holds the optimization options and is used to
 /// perform unconstrained optimization using the conjugate gradient algorithm.
+#[allow(clippy::identity_op)]
 pub struct ConjugateGradient<const N: usize>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     opts: Opts<N>,
     line_searcher: Option<Box<dyn LineSearch<N>>>,
 }
 //}}}
 //{{{ impl: ConjugateGradient
+
+#[allow(clippy::identity_op)]
 impl<const N: usize> ConjugateGradient<N>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     pub fn new(opts: Opts<N>) -> Self {
         Self {
@@ -116,7 +115,7 @@ where
             //}}}
             *dir_k1 = -*grad_fk;
             *dir_k = -*grad_fk;
-            dphi0 = grad_fk.dot(&dir_k);
+            dphi0 = grad_fk.dot(dir_k);
 
             self.line_searcher
                 .as_mut()
@@ -170,17 +169,14 @@ where
                 //{{{ trace
                 trace!("Applying fletcher-reeves update");
                 //}}}
-                let beta_tmp = grad_fk.dot(&grad_fk1) / norm_grad_fk1.powi(2);
-                beta_tmp
+                grad_fk.dot(grad_fk1) / norm_grad_fk1.powi(2)
             }
             DirectionMethod::PolakRibiere => {
                 //{{{ trace
                 trace!("Applying polak-ribiere update");
                 //}}}
                 let yk: SVector<N> = (grad_fk - grad_fk1).evals();
-                let mut beta_tmp = grad_fk.dot(&yk) / norm_grad_fk1.powi(2);
-                beta_tmp = beta_tmp.max(0.0);
-                beta_tmp
+                (grad_fk.dot(&yk) / norm_grad_fk1.powi(2)).max(0.0)
             }
         };
 
@@ -194,17 +190,19 @@ where
 }
 //}}}
 //{{{ impl: Minimizer for ConjugateGradient
+#[allow(clippy::identity_op)]
 impl<const N: usize, F: RealFn<N> + 'static> com::Minimizer<N, F> for ConjugateGradient<N>
 where
     [(); N * 1]:,
     [(); N * N]:,
+    (): GreaterThan<N, 1>,
 {
     fn minimize(&mut self, mut f: F, x0: SVector<N>) -> Result<com::Returns<N>, super::Error> {
         // initialize position, function value, gradient, and direction
         let mut xk = x0;
         let mut fk = f.eval(&xk);
         let mut grad_fk = f.grad(&xk);
-        let mut grad_fk1 = grad_fk;
+        let mut grad_fk1;
         let mut norm_grad_fk = grad_fk.norm();
         let mut dir_k = -grad_fk;
         let mut dir_k1 = -grad_fk;
@@ -290,7 +288,7 @@ where
             iter: outer_it,
             funcalls: outer_funcalls,
             gradcalls: outer_gradcalls,
-            num_restarts: num_restarts,
+            num_restarts,
         })
     }
 }
