@@ -604,9 +604,13 @@ impl<F: FnMut(f64) -> f64> Bounded<F> {
         }
 
         let out = if xf.is_nan() || fx.is_nan() || fu.is_nan() {
-            Err(Error::NanEncountered(format!("xf = {xf} fx = {fx} fu = {fu}")))
+            Err(Error::NanEncountered(format!(
+                "xf = {xf} fx = {fx} fu = {fu}"
+            )))
         } else if xf.is_infinite() || fx.is_infinite() || fu.is_infinite() {
-            Err(Error::InfEncountered(format!( "xf = {xf} fx = {fx} fu = {fu}",)))
+            Err(Error::InfEncountered(format!(
+                "xf = {xf} fx = {fx} fu = {fu}",
+            )))
         } else if reached_max_iter {
             Err(Error::MaxIterReached {
                 max_iter: self.max_iter,
