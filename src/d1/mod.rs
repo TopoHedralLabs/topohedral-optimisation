@@ -45,8 +45,8 @@ impl fmt::Display for Bounds {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Bounds::None => write!(f, "None"),
-            Bounds::Pair((a, b)) => write!(f, "Pair({}, {})", a, b),
-            Bounds::Triple((a, b, c)) => write!(f, "Triple({}, {}, {})", a, b, c),
+            Bounds::Pair((a, b)) => write!(f, "Pair({a}, {b})"),
+            Bounds::Triple((a, b, c)) => write!(f, "Triple({a}, {b}, {c})"),
         }
     }
 }
@@ -604,15 +604,9 @@ impl<F: FnMut(f64) -> f64> Bounded<F> {
         }
 
         let out = if xf.is_nan() || fx.is_nan() || fu.is_nan() {
-            Err(Error::NanEncountered(format!(
-                "xf = {} fs = {} fu = {}",
-                xf, fx, fu
-            )))
+            Err(Error::NanEncountered(format!("xf = {xf} fx = {fx} fu = {fu}")))
         } else if xf.is_infinite() || fx.is_infinite() || fu.is_infinite() {
-            Err(Error::InfEncountered(format!(
-                "xf = {} fs = {} fu = {}",
-                xf, fx, fu
-            )))
+            Err(Error::InfEncountered(format!( "xf = {xf} fx = {fx} fu = {fu}",)))
         } else if reached_max_iter {
             Err(Error::MaxIterReached {
                 max_iter: self.max_iter,

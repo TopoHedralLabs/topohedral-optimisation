@@ -143,8 +143,7 @@ mod tests {
         let res = line_searcher.line_search(phi0, dphi0);
 
         let alpha = res.unwrap().alpha;
-        let x1: SVector<2> = (&x + alpha * &dir).evals();
-        println!("res: x1 = {}  alpha = {}", x1, alpha);
+        let _x1: SVector<2> = (&x + alpha * &dir).evals();
     }
 
     #[test]
@@ -192,9 +191,7 @@ mod tests {
         let mut line_searcher = create(f.clone(), x, dir, method);
         let phi0 = f.eval(&x);
         let dphi0 = f.grad(&x).dot(&dir);
-        let res = line_searcher.line_search(phi0, dphi0);
-
-        println!("res: {:?}", res);
+        let _res = line_searcher.line_search(phi0, dphi0);
     }
 }
 //}}}
