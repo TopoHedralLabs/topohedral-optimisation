@@ -446,8 +446,6 @@ fn test_rosenbrock(
     let mut minimizer = umin::create(method);
     let res = minimizer.minimize(f, x0);
 
-    println!("res: {:?}", res);
-
     match results {
         Some((exp_fmin, exp_iters, exp_funcalls, exp_gradcalls, exp_restarts)) => {
             let res = res.unwrap();
