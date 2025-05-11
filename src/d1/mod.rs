@@ -224,9 +224,7 @@ pub fn bracket<F: FnMut(f64) -> f64>(
     if cond1 && cond2 && cond3 {
         Ok((a, b, c, fa, fb, fc, funcalls))
     } else {
-        Err(Error::BracketNotFound (
-            (iter, cond1, cond2, cond3),
-        ))
+        Err(Error::BracketNotFound((iter, cond1, cond2, cond3)))
     }
 }
 

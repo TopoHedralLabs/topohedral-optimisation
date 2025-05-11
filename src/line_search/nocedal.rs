@@ -6,8 +6,7 @@
 //{{{ crate imports
 use crate::common::*;
 use crate::line_search::{
-    satisfies_armijo, Error, LineSearch, LineSearchFn, LineSearchOpts,
-    LineSearchReturns,
+    satisfies_armijo, Error, LineSearch, LineSearchFn, LineSearchOpts, LineSearchReturns,
 };
 //}}}
 //{{{ std imports
@@ -601,11 +600,7 @@ mod tests {
         let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
         let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
 
-        let mut fline = LineSearchFn {
-            f,
-            x,
-            dir,
-        };
+        let mut fline = LineSearchFn { f, x, dir };
 
         let phi0 = fline.eval(0.0);
         let dphi0 = fline.eval_diff(0.0);
@@ -628,11 +623,7 @@ mod tests {
         let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
         let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
 
-        let mut fline = LineSearchFn {
-            f,
-            x,
-            dir
-        };
+        let mut fline = LineSearchFn { f, x, dir };
 
         let a0 = -10.0;
         let phi0 = fline.eval(a0);
@@ -660,11 +651,7 @@ mod tests {
         let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
         let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
 
-        let mut fline = LineSearchFn {
-            f,
-            x,
-            dir,
-        };
+        let mut fline = LineSearchFn { f, x, dir };
 
         let a0 = 3.0;
         let phi0 = fline.eval(a0);
@@ -688,11 +675,7 @@ mod tests {
         let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
         let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
 
-        let mut fline = LineSearchFn {
-            f,
-            x,
-            dir,
-        };
+        let mut fline = LineSearchFn { f, x, dir };
 
         let a0 = 1.0;
         let phi0 = fline.eval(a0);

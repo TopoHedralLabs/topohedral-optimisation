@@ -371,7 +371,7 @@ impl RealFn<2> for RosenBrock {
         let y = xvec[1];
         let a = self.a;
         let b = self.b;
-        
+
         (a - x).powi(2) + b * (y - x.powi(2)).powi(2)
     }
 
@@ -380,7 +380,7 @@ impl RealFn<2> for RosenBrock {
         let y = xvec[1];
         let a = self.a;
         let b = self.b;
-        
+
         SVector::<2>::from_col_slice(&[
             -2.0 * (a - x) - 4.0 * b * x * (y - x.powi(2)),
             2.0 * b * (y - x.powi(2)),

@@ -125,11 +125,7 @@ where
     (): GreaterThan<N, 1>,
 {
     fn new(f: F, x: SVector<N>, dir: SVector<N>) -> Self {
-        Self {
-            f,
-            x,
-            dir,
-        }
+        Self { f, x, dir }
     }
 
     fn eval(&mut self, alpha: f64) -> f64 {

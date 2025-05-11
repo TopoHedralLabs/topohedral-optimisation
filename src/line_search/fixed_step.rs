@@ -4,9 +4,7 @@
 
 //{{{ crate imports
 use crate::common::{GreaterThan, RealFn, SVector};
-use crate::line_search::{
-    Error, LineSearch, LineSearchFn, LineSearchOpts, LineSearchReturns,
-};
+use crate::line_search::{Error, LineSearch, LineSearchFn, LineSearchOpts, LineSearchReturns};
 //}}}
 //{{{ std imports
 //}}}
@@ -93,9 +91,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::common::{EvaluateSMatrix, FnMutWrap, VectorOps};
-    use crate::line_search::{
-        create, satisfies_armijo, satisfies_curvature, LineSearchMethod,
-    };
+    use crate::line_search::{create, satisfies_armijo, satisfies_curvature, LineSearchMethod};
 
     use approx::assert_abs_diff_eq;
 
