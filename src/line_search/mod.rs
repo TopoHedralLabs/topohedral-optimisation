@@ -41,6 +41,7 @@ use crate::common::{EvaluateSMatrix, GreaterThan, SVector, VectorOps};
 pub use crate::line_search::backtracking::{BacktrackingLineSearch, BacktrackingOpts};
 pub use crate::line_search::fixed_step::{FixedStepLineSearch, FixedStepOpts};
 pub use crate::line_search::nocedal::{NocedalLineSearch, NocedalOpts};
+pub use crate::line_search::thuente::{ThuenteLineSearch, ThuenteOpts};
 //}}}
 //{{{ std imports
 //}}}
@@ -114,6 +115,7 @@ pub enum LineSearchMethod {
     FixedStep(FixedStepOpts),
     Backtracking(BacktrackingOpts),
     Nocedal(NocedalOpts),
+    Thuente(ThuenteOpts),
 }
 //}}}
 //{{{ impl: LineSearchFn
@@ -207,21 +209,21 @@ where
     [(); N * N]:,
     (): GreaterThan<N, 1>,
 {
-    let f_line_search = LineSearchFn::new(f, x, dir);
 
     match opts {
         LineSearchMethod::FixedStep(opts) => Box::new(FixedStepLineSearch {
-            f: f_line_search,
+            f: LineSearchFn::new(f, x, dir),
             opts,
         }),
         LineSearchMethod::Backtracking(opts) => Box::new(BacktrackingLineSearch {
-            f: f_line_search,
+            f: LineSearchFn::new(f, x, dir),
             opts,
         }),
         LineSearchMethod::Nocedal(opts) => Box::new(NocedalLineSearch {
-            f: f_line_search,
+            f: LineSearchFn::new(f, x, dir),
             opts,
         }),
+        LineSearchMethod::Thuente(opts) => Box::new(ThuenteLineSearch::new(f, x, dir, opts)),
     }
 }
 //}}}

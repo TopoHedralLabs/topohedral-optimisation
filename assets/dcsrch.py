@@ -825,6 +825,24 @@ def test_dcsrch1():
         out = (alpha**2 - beta) / ((alpha**2 + beta)**2)
         return out
 
+
+    alpha0 = 0.0
+    phi0 = phi(alpha0)
+    derphi0 = dphi(alpha0)
+    dcsrch_obj = DCSRCH(phi, dphi, 1e-4, 0.9, 1e-14, 1e-8, 50)
+    alpha_out, phi_out, dphi_out, task = dcsrch_obj(alpha1=1.0, phi0=phi0, derphi0=derphi0)
+    print(f"{alpha_out}, {phi_out}, {dphi_out}, {task}")
+
+
+def test_dcsrch2():
+    def phi(alpha): 
+        return alpha**2
+
+    def dphi(alpha):
+        return 2 * alpha
+
+    alpha0 = 10.0
+
     
 
 
