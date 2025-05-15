@@ -815,26 +815,63 @@ def plot_fcn(fcn: tp.Callable[[float], float], lims: tp.Tuple[float, float], n_p
 
 def test_dcsrch1():
 
-    def phi(alpha):
+    def phi(alpha_in):
+        alpha = alpha_in
         beta = 2
         out = (-alpha) / (alpha**2 + beta)
         return out
     
-    def dphi(alpha):
+    def dphi(alpha_in):
+        alpha = alpha_in
         beta = 2
         out = (alpha**2 - beta) / ((alpha**2 + beta)**2)
         return out
 
+    test_alphas = [1e-4, 1e-3, 1e-2, 1e-1, 1.0, 10.0, 100.0, 500.0]
+    output = []
 
-    alpha0 = 0.0
-    phi0 = phi(alpha0)
-    derphi0 = dphi(alpha0)
-    dcsrch_obj = DCSRCH(phi, dphi, 1e-4, 0.9, 1e-14, 1e-8, 50)
-    alpha_out, phi_out, dphi_out, task = dcsrch_obj(alpha1=1.0, phi0=phi0, derphi0=derphi0)
-    print(f"{alpha_out}, {phi_out}, {dphi_out}, {task}")
-
+    for alpha in test_alphas:
+        alpha0 = 0.0
+        phi0 = phi(alpha0)
+        derphi0 = dphi(alpha0)
+        dcsrch_obj = DCSRCH(phi, dphi, 1e-4, 0.9, 1e-14, 1e-8, 1000)
+        alpha_out, phi_out, dphi_out, task = dcsrch_obj(alpha1=alpha, phi0=phi0, derphi0=derphi0)
+        output.append((alpha_out, phi_out, dphi_out, task))
+        print(f"alpha: {alpha:1.8e}, alpha_out: {alpha_out:1.8e}, phi_out: {phi_out:1.8e}, dphi_out: {dphi_out}, task: {task}")
+    
+    plot_fcn(phi, (0, 16), n_pts=1000)
 
 def test_dcsrch2():
+
+    def phi(alpha_in):
+        alpha = (16 - alpha_in) 
+        beta = 2
+        out = (-alpha) / (alpha**2 + beta)
+        return out
+    
+    def dphi(alpha_in):
+        alpha = (16 - alpha_in)
+        beta = 2
+        out = -(alpha**2 - beta) / ((alpha**2 + beta)**2)
+        return out
+
+    test_alphas = [1e-4, 1e-3, 1e-2, 1e-1, 1.0, 10.0, 100.0, 500.0]
+    output = []
+
+    for alpha in test_alphas:
+        alpha0 = 0.0
+        phi0 = phi(alpha0)
+        derphi0 = dphi(alpha0)
+        dcsrch_obj = DCSRCH(phi, dphi, 1e-4, 0.9, 1e-14, 1e-8, 1000)
+        alpha_out, phi_out, dphi_out, task = dcsrch_obj(alpha1=alpha, phi0=phi0, derphi0=derphi0)
+        output.append((alpha_out, phi_out, dphi_out, task))
+        print(f"alpha: {alpha}, alpha_out: {alpha_out}, phi_out: {phi_out}, dphi_out: {dphi_out}, task: {task}")
+    
+    plot_fcn(dphi, (0, 16), n_pts=1000)
+    
+
+
+def test_dcsrch3():
     def phi(alpha): 
         return alpha**2
 
@@ -850,6 +887,7 @@ def test_dcsrch2():
 def main():
 
     test_dcsrch1()
+    # test_dcsrch2()
 
 
 

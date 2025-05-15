@@ -176,7 +176,7 @@ fn test_quadratic(
 
     let mut minimizer = umin::create(method);
     let res = minimizer.minimize(f, x0).unwrap();
-    let xdiff: SVector<5> = (&res.xmin - &exp_xmin).evals();
+    let xdiff: SVector<5> = (res.xmin - exp_xmin).evals();
     assert!(xdiff.norm() < 1e-6);
     assert_relative_eq!(res.fmin, exp_fmin, epsilon = 1e-6);
     assert_eq!(res.funcalls, exp_funcalls);
@@ -345,7 +345,7 @@ fn test_quartic(
     match results {
         Some((exp_fmin, exp_iters, exp_funcalls, exp_gradcalls)) => {
             let res = res.unwrap();
-            let xdiff: SVector<5> = (&res.xmin - &exp_xmin).evals();
+            let xdiff: SVector<5> = (res.xmin - exp_xmin).evals();
             assert!(xdiff.norm() < exp_xdiff_tol);
             assert_relative_eq!(res.fmin, exp_fmin, epsilon = 1e-4);
             assert_eq!(res.iter, exp_iters);
@@ -449,7 +449,7 @@ fn test_rosenbrock(
     match results {
         Some((exp_fmin, exp_iters, exp_funcalls, exp_gradcalls, exp_restarts)) => {
             let res = res.unwrap();
-            let xdiff: SVector<2> = (&res.xmin - &exp_xmin).evals();
+            let xdiff: SVector<2> = (res.xmin - exp_xmin).evals();
             assert!(xdiff.norm() < exp_xdiff_tol);
             assert_relative_eq!(res.fmin, exp_fmin, epsilon = 1e-4);
             assert_eq!(res.iter, exp_iters);

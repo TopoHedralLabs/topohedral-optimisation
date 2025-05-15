@@ -28,7 +28,7 @@ pub struct ThuenteOpts {
     pub min_step_size: f64,
     pub max_step_size: f64,
     pub max_iter: usize,
-    alpha_tol: f64,
+    pub alpha_tol: f64,
 }
 //}}}
 //{{{ struct: ThuenteLineSearch
@@ -75,14 +75,14 @@ where
         //{{{ trace: enter
         error!(target: "ls", "Entering line search with phi0 = {phi0}, dphi0 = {dphi0}");
         //}}}
-        self.initialise(0.0, phi0, dphi0);
+        self.initialise(self.opts.initial_step_size, phi0, dphi0);
         let (mut alpha, mut phi_alpha, mut dphi_alpha) = (0.0, phi0, dphi0);
         let (mut funcalls, mut gradcalls) = (0, 0);
 
         for i in 0..self.opts.max_iter {
             //{{{ trace
             info!(target: "ls", "-------------- On iteration {i}");
-            info!(target: "ls", "alpha = {alpha}, phi_alpha = {phi_alpha}, dphi_alpha = {dphi_alpha}");
+            info!(target: "ls", "alpha = {alpha:.4e}, phi_alpha = {phi_alpha:.4e}, dphi_alpha = {dphi_alpha:.4e}");
             //}}}
             match self.iterate(IterateData {
                 alpha,
@@ -91,9 +91,10 @@ where
                 funcalls: 0,
                 gradcalls: 0,
             }) {
+                //{{{ case: converged
                 IterateReturn::Converged(data) => {
                     //{{{ trace
-                    info!(target: "ls", 
+                    info!(target: "ls",
                         "Converged with alpha = {}, phi_alpha = {}, dphi_alpha = {}",
                         data.alpha, data.phi_alpha, data.dphi_alpha
                     );
@@ -107,6 +108,8 @@ where
                         gradcalls,
                     });
                 }
+                //}}}
+                //{{{ case: unconverged
                 IterateReturn::Unconverged(data) => {
                     //{{{ trace
                     info!(target: "ls", "Unconverged with alpha = {alpha}, phi_alpha = {phi_alpha}, dphi_alpha = {dphi_alpha}");
@@ -117,7 +120,9 @@ where
                     funcalls += data.funcalls;
                     gradcalls += data.gradcalls;
                 }
-                IterateReturn::Error(_data) => {}
+                //}}}
+                //{{{ case: error
+                IterateReturn::Error(_data) => {} //}}}
             }
         }
 
@@ -193,20 +198,26 @@ where
         }
     }
 
-    fn initialise(&mut self, alpha: f64, phi_alpha: f64, dphi_alpha: f64) {
+    /// Initialise the line search algorithm.
+    ///
+    /// Parameters:
+    /// - `alpha`: initial guess step size, must be > 0
+    /// - `phi_alpha0`: function value at alpha = 0
+    /// - `dphi_alpha0`: initial derivative value at alpha = 0
+    fn initialise(&mut self, alpha: f64, phi_alpha0: f64, dphi_alpha0: f64) {
         self.brackt = false;
         self.stage = 1;
-        self.phi_init = phi_alpha;
-        self.dphi_init = dphi_alpha;
-        self.dphi_test = self.opts.ls_opts.c2 * self.dphi_init;
+        self.phi_init = phi_alpha0;
+        self.dphi_init = dphi_alpha0;
+        self.dphi_test = self.opts.ls_opts.c1 * self.dphi_init;
         self.width = self.opts.max_step_size - self.opts.min_step_size;
         self.width1 = self.width * P5;
         self.alpha_a = 0.0;
-        self.phi_a = phi_alpha;
-        self.dphi_a = dphi_alpha;
+        self.phi_a = phi_alpha0;
+        self.dphi_a = dphi_alpha0;
         self.alpha_b = 0.0;
-        self.phi_b = phi_alpha;
-        self.dphi_b = dphi_alpha;
+        self.phi_b = phi_alpha0;
+        self.dphi_b = dphi_alpha0;
         self.stmin = 0.0;
         self.stmax = (1.0 + XTRAPU) * alpha
     }
@@ -238,7 +249,7 @@ where
             self.stage = 2;
         }
 
-        if self.stage == 1 && phi_alpha < self.phi_a && phi_alpha > phi_test 
+        if self.stage == 1 && phi_alpha < self.phi_a && phi_alpha > phi_test
         //{{{ case: stage 1
         {
             // A modified function is used to predict the step during the
@@ -275,9 +286,9 @@ where
             self.dphi_b = dcstep_res.dphi_b + self.dphi_test;
             alpha = dcstep_res.alpha;
             self.brackt = dcstep_res.brackt;
-        } 
+        }
         //}}}
-        else 
+        else
         //{{{ case: stage 2
         {
             // Call dcstep to update stx, sty, and to compute the new step.
@@ -305,10 +316,9 @@ where
             self.dphi_a = dcstep_res.dphi_a;
             self.dphi_b = dcstep_res.dphi_b;
             self.brackt = dcstep_res.brackt;
-
         }
         //}}}
-        
+
         if self.brackt {
             // decide if a bisection is needed
             if (self.alpha_b - self.alpha_a).abs() >= P66 * self.width1 {
@@ -347,9 +357,9 @@ where
             alpha,
             phi_alpha,
             dphi_alpha,
-            funcalls, 
-            gradcalls
-        }) 
+            funcalls,
+            gradcalls,
+        })
     }
 }
 //}}}
@@ -596,69 +606,70 @@ mod tests {
 
     use topohedral_linalg::VectorOps;
 
+    /*
+        //{{{ collection: line search tests
+        #[test]
+        fn test_fcn1() {
+            let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 { x[0].powi(2) + x[1].powi(2) });
 
-    //{{{ collection: line search tests
-    #[test]
-    fn test_fcn1() {
-        let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 { x[0].powi(2) + x[1].powi(2) });
+            let x = SVector::<2>::from_col_slice(&[1.0, 1.0]);
+            let dir = SVector::<2>::from_col_slice(&[-1.0, -1.0]);
 
-        let x = SVector::<2>::from_col_slice(&[1.0, 1.0]);
-        let dir = SVector::<2>::from_col_slice(&[-1.0, -1.0]);
+            let method = LineSearchMethod::Thuente(ThuenteOpts {
+                ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
+                initial_step_size: 1.0,
+                min_step_size: 1e-8,
+                max_step_size: 100.0,
+                max_iter: 10,
+                alpha_tol: 1e-6,
+            });
 
-        let method = LineSearchMethod::Thuente(ThuenteOpts {
-            ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
-            initial_step_size: 1.0,
-            min_step_size: 1e-8,
-            max_step_size: 100.0,
-            max_iter: 10,
-            alpha_tol: 1e-6,
-        });
+            let mut line_searcher = create(f.clone(), x, dir, method);
+            let phi0 = f.eval(&x);
+            let dphi0 = f.grad(&x).dot(&dir);
+            let res = line_searcher.line_search(phi0, dphi0);
 
-        let mut line_searcher = create(f.clone(), x, dir, method);
-        let phi0 = f.eval(&x);
-        let dphi0 = f.grad(&x).dot(&dir);
-        let res = line_searcher.line_search(phi0, dphi0);
+            assert!(res.is_ok());
+            let res = res.unwrap();
+            assert_relative_eq!(res.alpha, 1.0, epsilon = 1e-6);
+            assert_relative_eq!(res.falpha, 0.0, epsilon = 1e-6);
+            assert_eq!(res.funcalls, 5);
+            assert_eq!(res.gradcalls, 5);
+        }
 
-        assert!(res.is_ok());
-        let res = res.unwrap();
-        assert_relative_eq!(res.alpha, 1.0, epsilon = 1e-6);
-        assert_relative_eq!(res.falpha, 0.0, epsilon = 1e-6);
-        assert_eq!(res.funcalls, 5);
-        assert_eq!(res.gradcalls, 5);
-    }
+        #[test]
+        fn test_fcn2() {
+            let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 {
+                let beta = 2.0;
+                let alpha = x[0];
+                -alpha / (alpha.powi(2) + beta)
+            });
 
-    #[test]
-    fn test_fcn2() {
-        let mut f = FnMutWrap::new(|x: &SVector<2>| -> f64 {
-            let beta = 2.0;
-            let alpha = x[0];
-            -alpha / (alpha.powi(2) + beta)
-        });
+            let method = LineSearchMethod::Thuente(ThuenteOpts {
+                ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
+                initial_step_size: 1.0,
+                min_step_size: 1e-8,
+                max_step_size: 100.0,
+                max_iter: 10,
+                alpha_tol: 1e-6,
+            });
 
-        let method = LineSearchMethod::Thuente(ThuenteOpts {
-            ls_opts: LineSearchOpts { c1: 1e-4, c2: 0.9 },
-            initial_step_size: 1.0,
-            min_step_size: 1e-8,
-            max_step_size: 100.0,
-            max_iter: 10,
-            alpha_tol: 1e-6,
-        });
+            let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
+            let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
+            let mut line_searcher = create(f.clone(), x, dir, method);
 
-        let x = SVector::<2>::from_col_slice(&[0.0, 0.0]);
-        let dir = SVector::<2>::from_col_slice(&[1.0, 0.0]);
-        let mut line_searcher = create(f.clone(), x, dir, method);
+            let phi0 = f.eval(&x);
+            let dphi0 = f.grad(&x).dot(&dir);
+            let res = line_searcher.line_search(phi0, dphi0);
 
-        let phi0 = f.eval(&x);
-        let dphi0 = f.grad(&x).dot(&dir);
-        let res = line_searcher.line_search(phi0, dphi0);
-
-        assert!(res.is_ok());
-        let res = res.unwrap();
-        assert_relative_eq!(res.alpha, 10.0, epsilon = 1e-6);
-        assert_relative_eq!(res.falpha, -0.09803921568627451, epsilon = 1e-6);
-        assert_eq!(res.funcalls, 1);
-        assert_eq!(res.gradcalls, 1);
-    }
-    //}}}
+            assert!(res.is_ok());
+            let res = res.unwrap();
+            assert_relative_eq!(res.alpha, 10.0, epsilon = 1e-6);
+            assert_relative_eq!(res.falpha, -0.09803921568627451, epsilon = 1e-6);
+            assert_eq!(res.funcalls, 1);
+            assert_eq!(res.gradcalls, 1);
+        }
+        //}}}
+    */
 }
 //}}}

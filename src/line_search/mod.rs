@@ -98,7 +98,7 @@ pub struct LineSearchReturns {
 //}}}
 //{{{ struct: LineSearchFn
 #[allow(clippy::identity_op)]
-pub(crate) struct LineSearchFn<const N: usize, F: RealFn<N>>
+pub struct LineSearchFn<const N: usize, F: RealFn<N>>
 where
     [(); N * 1]:,
     [(); N * N]:,
@@ -126,16 +126,16 @@ where
     [(); N * N]:,
     (): GreaterThan<N, 1>,
 {
-    fn new(f: F, x: SVector<N>, dir: SVector<N>) -> Self {
+    pub fn new(f: F, x: SVector<N>, dir: SVector<N>) -> Self {
         Self { f, x, dir }
     }
 
-    fn eval(&mut self, alpha: f64) -> f64 {
+    pub fn eval(&mut self, alpha: f64) -> f64 {
         let x_alpha = (&self.x + alpha * &self.dir).evals();
         self.f.eval(&x_alpha)
     }
 
-    fn eval_diff(&mut self, alpha: f64) -> f64 {
+    pub fn eval_diff(&mut self, alpha: f64) -> f64 {
         let x_alpha = (&self.x + alpha * &self.dir).evals();
         let grad_f = self.f.grad(&x_alpha);
         grad_f.dot(&self.dir)
@@ -209,7 +209,6 @@ where
     [(); N * N]:,
     (): GreaterThan<N, 1>,
 {
-
     match opts {
         LineSearchMethod::FixedStep(opts) => Box::new(FixedStepLineSearch {
             f: LineSearchFn::new(f, x, dir),
