@@ -12,7 +12,7 @@ use crate::line_search::{
 //{{{ std imports
 //}}}
 //{{{ dep imports
-use topohedral_linalg::smatrix::MatMul;
+use topohedral_linalg::MatMul;
 use topohedral_tracing::*;
 //}}}
 //--------------------------------------------------------------------------------------------------
